@@ -1,7 +1,14 @@
 from builtins import object
 from flask.sessions import SessionMixin
+from uuid import uuid4
+
+class IdentifiableSessionMixin(SessionMixin):
+    def get_id(self):
+        'get a unique identifier for this session'
+        raise NotImplementedError
 
 class SessionDatastoreMixin(object):
+    ''' Datastore Mixin for creating a new Session DataManagement '''
     def create(self):
         'Create a new session'
         raise NotImplementedError
