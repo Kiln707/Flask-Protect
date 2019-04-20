@@ -8,5 +8,8 @@ class ValidatorMixin():
     def routes(self, blueprint):
         raise NotImplementedError()
 
+    def initialize_blueprint(self, blueprint, **kwargs):
+        self.routes(blueprint)
+
 class UserMixin():
     pass

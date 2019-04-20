@@ -27,7 +27,7 @@ class Protect(object):
                    subdomain=self._config['SUBDOMAIN'],
                    template_folder='templates')
         if self._validator:
-            self._validator.routes(bp)
+            self._validator.initialize_blueprint(bp, config=self.config)
         self._blueprint=bp
         return bp
 
