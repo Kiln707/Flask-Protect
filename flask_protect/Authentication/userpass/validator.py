@@ -25,13 +25,12 @@ class UserPassValidator(ValidatorMixin):
             'DEPRECIATED_SCHEMES':["auto"], #By Default, Depreciate all schemes except default
             'TRUNCATE_ERROR':False, #Silently truncate password.
         }
-
     }
 
     def __init__(self, datastore, crypt_context=None, **kwargs):
+        super().__init__(**kwargs)
         self._datastore=datastore
         self._cryptcontext=None
-        self._kwargs = kwargs
         self._set_crypt_context(crypt_context)
 
     def _set_crypt_context(self, crypt_context):
@@ -62,11 +61,14 @@ class UserPassValidator(ValidatorMixin):
         else:
             self.dummy_verify()
 
+    def hash_password(self, password, scheme=None, category=None, **kwargs):
+        return self._cryptcontext.hash(self, password, scheme=scheme, category=category, **kwargs)
+
     def validate_password(self, password, hash, **kwargs):
-        pass
+        return self._cryptcontext.verify(password, hash, **kwargs)
 
     def validate_password_and_update_hash(self, password, hash, **kwargs):
-        pass
+        return self._cryptcontext.verify_and_update()
 
     def dummy_validate(self):
         self._cryptcontext.dummy_verify()
@@ -74,10 +76,10 @@ class UserPassValidator(ValidatorMixin):
     def crypt_update(**kwargs):
         self._cryptcontext.update(**kwargs)
 
-    def initialize_blueprint(self, blueprint, **kwargs):
-        super().initialize_blueprint(blueprint)
+    def initialize(self, config, **kwargs):
+        super().initialize(config, **kwargs) #Set config
         if not self._cryptcontext:
-            
+            self._cryptcontext = CryptContext(**self._config['CRYPT_SETTINGS'])
 
     def get_defaults(self):
         return self.__DEFAULT_CONFIG

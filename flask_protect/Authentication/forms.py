@@ -1,0 +1,2 @@
+class RegisterFormMixin():
+    pass
