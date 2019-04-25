@@ -3,6 +3,30 @@ from flask import current_app, Blueprint, url_for
 from werkzeug.local import LocalProxy
 
 class Protect(object):
+    __DEFAULT_CORE_CONFIG = {
+        #Basic Functionality
+        'BLUEPRINT_NAME': 'protect',
+        'URL_PREFIX':None,
+        'SUBDOMAIN':None,
+        'FLASH_MESSAGES': True,
+        'URLS': {
+            'LOGIN_URL':'/login',
+            'LOGOUT_URL':'/logout',
+            'REGISTER_URL':'/register',
+            'RESET_PASS_URL':'/reset',
+            'CHANGE_PASS_URL':'/change',
+            'CONFIRM_EMAIL_URL':'/confirm'
+            },
+        'TEMPLATES': {
+            'LOGIN_TEMPLATE': 'protect/login_user.html',
+            'REGISTER_TEMPLATE': 'protect/register_user.html',
+            'RESET_PASS_TEMPLATE': 'protect/reset_password.html',
+            'FORGOT_PASS_TEMPLATE': 'protect/forgot_password.html',
+            'CHANGE_PASS_TEMPLATE': 'protect/change_password.html',
+            'SEND_CONFIRM_TEMPLATE': 'protect/send_confirmation.html',
+        }
+
+    }
 
     def __init__(self, app=None, validator=None, register_blueprint=True, **kwargs):
         self._validator = validator
@@ -36,9 +60,12 @@ class Protect(object):
         endpoint = '%s.%s' % (self.blueprint_name, endpoint)
         return url_for(endpoint, **values)
 
+    def get_message(key, **kwargs):
+        rv = self.get_config('MSGS')['MSG_' + key]
+        return localize_callback(rv[0], **kwargs), rv[1]
+
     def set_defaults(self):
-        from .configuration.core_config import __DEFAULT_CORE_CONFIG
-        self._set_defaults(__DEFAULT_CORE_CONFIG)
+        self._set_defaults(self.__DEFAULT_CORE_CONFIG)
         self._set_defaults(self._validator.get_defaults())
 
     def _set_defaults(self, values):
@@ -52,4 +79,7 @@ class Protect(object):
 
     def _set_config(self, values):
         for key, value in values.items():
-            self.config[key]=value
+            self.config['PROTECT' + key]=value
+
+    def get_config(self, key):
+        return self.config['PROTECT'+key]
