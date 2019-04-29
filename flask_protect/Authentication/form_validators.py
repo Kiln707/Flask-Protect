@@ -34,4 +34,4 @@ def unique_user_email(form, field):
 def valid_user_email(form, field):
     form.user = _datastore.get_user(field.data)
     if form.user is None:
-raise ValidationError(get_message('USER_DOES_NOT_EXIST')[0])
+        raise ValidationError(get_message('USER_DOES_NOT_EXIST')[0])

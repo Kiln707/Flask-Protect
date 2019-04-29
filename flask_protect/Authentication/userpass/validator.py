@@ -1,15 +1,16 @@
 from ..mixins import ValidatorMixin
+from ..forms import LoginForm
 from passlib.context import CryptContext
 import os
 
 class UserPassValidator(ValidatorMixin):
     __DEFAULT_CONFIG={
-        'ALLOW_BOTH_IDENTIFIER_AND_EMAIL'=True, #Can a identifier or email address be used for validating?
-        'USE_IDENTIFIER_OR_EMAIL'='identifier', #Which field should be used if not both
-        'AUTO_UPDATE_HASH'=True
-        'IDENTIFIER_FIELD'='username', #Field in DB_Model for Identification
-        'EMAIL_FIELD'='email',#Field in DB_Model for email
-        'PASSWORD_FIELD'='password',
+        'ALLOW_BOTH_IDENTIFIER_AND_EMAIL':True, #Can a identifier or email address be used for validating?
+        'USE_IDENTIFIER_OR_EMAIL':'identifier', #Which field should be used if not both
+        'AUTO_UPDATE_HASH':True,
+        'IDENTIFIER_FIELD':'username', #Field in DB_Model for Identification
+        'EMAIL_FIELD':'email',#Field in DB_Model for email
+        'PASSWORD_FIELD':'password',
         'CRYPT_SETTINGS':{
             'PASSWORD_SCHEMES':[
                 'bcrypt',
@@ -23,8 +24,32 @@ class UserPassValidator(ValidatorMixin):
             ],
             'DEFAULT_SCHEME': 'sha256_crypt',
             'DEPRECIATED_SCHEMES':["auto"], #By Default, Depreciate all schemes except default
-            'TRUNCATE_ERROR':False, #Silently truncate password.
-        }
+            'TRUNCATE_ERROR':False #Silently truncate password.
+            },
+        'URLS': {
+            'LOGIN':'/login',
+            'LOGOUT':'/logout',
+            'REGISTER':'/register',
+            'RESET_PASS':'/reset',
+            'CHANGE_PASS':'/change',
+            'CONFIRM_EMAIL':'/confirm'
+            },
+        'FORMS':{
+            'LOGIN': LoginForm,
+            'LOGOUT': None,
+            'REGISTER': None,
+            'RESET_PASS':None,
+            'CHANGE_PASS':None,
+            'CONFIRM_EMAIL':None
+            },
+        'REDIRECTS':{
+            'LOGIN': '',
+            'LOGOUT': '',
+            'REGISTER': '',
+            'RESET_PASS': '',
+            'CHANGE_PASS': '',
+            'CONFIRM_EMAIL': ''
+            },
         'MSGS': {
             'UNAUTHORIZED': (
                 _('You do not have permission to view this resource.'), 'error'),
@@ -100,7 +125,16 @@ class UserPassValidator(ValidatorMixin):
             'LOGIN': (
                 _('Please log in to access this page.'), 'info'),
             'REFRESH': (
-                _('Please reauthenticate to access this page.'), 'info'),
+                _('Please reauthenticate to access this page.'), 'info')
+        },
+        'field_labels':{
+            'identifier':'Username',
+            'email':'Email Address',
+            'password':'Password',
+            'remember_me':'Remember Me',
+            'login':'Login',
+            'register':'Register',
+
         }
     }
 
@@ -158,8 +192,12 @@ class UserPassValidator(ValidatorMixin):
         if not self._cryptcontext:
             self._cryptcontext = CryptContext(**self._config['CRYPT_SETTINGS'])
 
-    def get_defaults(self):
-        return self.__DEFAULT_CONFIG
+    def login_view(self):
+        form, validated = self.get_and_validate_form('LOGIN')
+        if validated:
+            #TODO: Login User
+            if not request.is_json:
+                return redirect()
 
     def routes(self, blueprint):
-        raise NotImplementedError()
+        blueprint.add_url_rule(rule=self._get_url('LOGIN'), endpoint='login', view_func=self.login_view, methods=['GET', 'POST'])
