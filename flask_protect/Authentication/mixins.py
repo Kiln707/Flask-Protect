@@ -1,3 +1,4 @@
+from flask import request
 from ..utils import validate_redirect_url
 
 class ValidatorMixin():
@@ -13,7 +14,7 @@ class ValidatorMixin():
         raise NotImplementedError()
 
     def initialize(self, config):
-        self._config = kwargs['config']
+        self._config = config
 
     def initialize_blueprint(self, blueprint, config, **kwargs):
         self.initialize(config)
@@ -23,7 +24,7 @@ class ValidatorMixin():
         return self.__DEFAULT_CONFIG
 
     def _get_url(endpoint_or_url):
-         """Returns a URL if a valid endpoint is found. Otherwise, returns the
+        """Returns a URL if a valid endpoint is found. Otherwise, returns the
         provided value.
         :param endpoint_or_url: The endpoint name or URL to default to
         """

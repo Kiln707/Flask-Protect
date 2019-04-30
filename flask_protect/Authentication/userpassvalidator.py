@@ -1,5 +1,6 @@
-from ..mixins import ValidatorMixin
-from ..forms import LoginForm
+from flask import request
+from .mixins import ValidatorMixin
+from .forms import LoginForm
 from passlib.context import CryptContext
 import os
 
@@ -12,7 +13,7 @@ class UserPassValidator(ValidatorMixin):
         'EMAIL_FIELD':'email',#Field in DB_Model for email
         'PASSWORD_FIELD':'password',
         'CRYPT_SETTINGS':{
-            'PASSWORD_SCHEMES':[
+            'schemes':[
                 'bcrypt',
                 'sha256_crypt',
                 'sha512_crypt',
@@ -22,9 +23,9 @@ class UserPassValidator(ValidatorMixin):
                 # And always last one...
                 'plaintext'
             ],
-            'DEFAULT_SCHEME': 'sha256_crypt',
-            'DEPRECIATED_SCHEMES':["auto"], #By Default, Depreciate all schemes except default
-            'TRUNCATE_ERROR':False #Silently truncate password.
+            'default': 'sha256_crypt',
+            'deprecated':["auto"], #By Default, Depreciate all schemes except default
+            'truncate_error':False #Silently truncate password.
             },
         'URLS': {
             'LOGIN':'/login',
@@ -34,6 +35,13 @@ class UserPassValidator(ValidatorMixin):
             'CHANGE_PASS':'/change',
             'CONFIRM_EMAIL':'/confirm'
             },
+        'TEMPLATES': {
+            'LOGIN': 'protect/login_user.html',
+            'REGISTER': 'protect/register_user.html',
+            'RESET_PASS': 'protect/reset_password.html',
+            'CHANGE_PASS': 'protect/change_password.html',
+            'CONFIRM_EMAIL': 'protect/send_confirmation.html',
+        },
         'FORMS':{
             'LOGIN': LoginForm,
             'LOGOUT': None,
@@ -52,80 +60,80 @@ class UserPassValidator(ValidatorMixin):
             },
         'MSGS': {
             'UNAUTHORIZED': (
-                _('You do not have permission to view this resource.'), 'error'),
+                ('You do not have permission to view this resource.'), 'error'),
             'CONFIRM_REGISTRATION': (
-                _('Thank you. Confirmation instructions '
+                ('Thank you. Confirmation instructions '
                   'have been sent to %(email)s.'),
                 'success'),
             'EMAIL_CONFIRMED': (
-                _('Thank you. Your email has been confirmed.'), 'success'),
+                ('Thank you. Your email has been confirmed.'), 'success'),
             'ALREADY_CONFIRMED': (
-                _('Your email has already been confirmed.'), 'info'),
+                ('Your email has already been confirmed.'), 'info'),
             'INVALID_CONFIRMATION_TOKEN': (
-                _('Invalid confirmation token.'), 'error'),
+                ('Invalid confirmation token.'), 'error'),
             'EMAIL_ALREADY_ASSOCIATED': (
-                _('%(email)s is already associated with an account.'), 'error'),
+                ('%(email)s is already associated with an account.'), 'error'),
             'PASSWORD_MISMATCH': (
-                _('Password does not match'), 'error'),
+                ('Password does not match'), 'error'),
             'RETYPE_PASSWORD_MISMATCH': (
-                _('Passwords do not match'), 'error'),
+                ('Passwords do not match'), 'error'),
             'INVALID_REDIRECT': (
-                _('Redirections outside the domain are forbidden'), 'error'),
+                ('Redirections outside the domain are forbidden'), 'error'),
             'PASSWORD_RESET_REQUEST': (
-                _('Instructions to reset your password have been sent to %(email)s.'),
+                ('Instructions to reset your password have been sent to %(email)s.'),
                 'info'),
             'PASSWORD_RESET_EXPIRED': (
-                _('You did not reset your password within %(within)s. '
+                ('You did not reset your password within %(within)s. '
                   'New instructions have been sent to %(email)s.'), 'error'),
             'INVALID_RESET_PASSWORD_TOKEN': (
-                _('Invalid reset password token.'), 'error'),
+                ('Invalid reset password token.'), 'error'),
             'CONFIRMATION_REQUIRED': (
-                _('Email requires confirmation.'), 'error'),
+                ('Email requires confirmation.'), 'error'),
             'CONFIRMATION_REQUEST': (
-                _('Confirmation instructions have been sent to %(email)s.'), 'info'),
+                ('Confirmation instructions have been sent to %(email)s.'), 'info'),
             'CONFIRMATION_EXPIRED': (
-                _('You did not confirm your email within %(within)s. '
+                ('You did not confirm your email within %(within)s. '
                   'New instructions to confirm your email have been sent '
                   'to %(email)s.'), 'error'),
             'LOGIN_EXPIRED': (
-                _('You did not login within %(within)s. New instructions to login '
+                ('You did not login within %(within)s. New instructions to login '
                   'have been sent to %(email)s.'), 'error'),
             'LOGIN_EMAIL_SENT': (
-                _('Instructions to login have been sent to %(email)s.'), 'success'),
+                ('Instructions to login have been sent to %(email)s.'), 'success'),
             'INVALID_LOGIN_TOKEN': (
-                _('Invalid login token.'), 'error'),
+                ('Invalid login token.'), 'error'),
             'DISABLED_ACCOUNT': (
-                _('Account is disabled.'), 'error'),
+                ('Account is disabled.'), 'error'),
             'EMAIL_NOT_PROVIDED': (
-                _('Email not provided'), 'error'),
+                ('Email not provided'), 'error'),
             'INVALID_EMAIL_ADDRESS': (
-                _('Invalid email address'), 'error'),
+                ('Invalid email address'), 'error'),
             'PASSWORD_NOT_PROVIDED': (
-                _('Password not provided'), 'error'),
+                ('Password not provided'), 'error'),
             'PASSWORD_NOT_SET': (
-                _('No password is set for this user'), 'error'),
+                ('No password is set for this user'), 'error'),
             'PASSWORD_INVALID_LENGTH': (
-                _('Password must be at least 6 characters'), 'error'),
+                ('Password must be at least 6 characters'), 'error'),
             'USER_DOES_NOT_EXIST': (
-                _('Specified user does not exist'), 'error'),
+                ('Specified user does not exist'), 'error'),
             'INVALID_PASSWORD': (
-                _('Invalid password'), 'error'),
+                ('Invalid password'), 'error'),
             'PASSWORDLESS_LOGIN_SUCCESSFUL': (
-                _('You have successfully logged in.'), 'success'),
+                ('You have successfully logged in.'), 'success'),
             'FORGOT_PASSWORD': (
-                _('Forgot password?'), 'info'),
+                ('Forgot password?'), 'info'),
             'PASSWORD_RESET': (
-                _('You successfully reset your password and you have been logged in '
+                ('You successfully reset your password and you have been logged in '
                   'automatically.'), 'success'),
             'PASSWORD_IS_THE_SAME': (
-                _('Your new password must be different than your previous password.'),
+                ('Your new password must be different than your previous password.'),
                 'error'),
             'PASSWORD_CHANGE': (
-                _('You successfully changed your password.'), 'success'),
+                ('You successfully changed your password.'), 'success'),
             'LOGIN': (
-                _('Please log in to access this page.'), 'info'),
+                ('Please log in to access this page.'), 'info'),
             'REFRESH': (
-                _('Please reauthenticate to access this page.'), 'info')
+                ('Please reauthenticate to access this page.'), 'info')
         },
         'field_labels':{
             'identifier':'Username',
@@ -133,8 +141,7 @@ class UserPassValidator(ValidatorMixin):
             'password':'Password',
             'remember_me':'Remember Me',
             'login':'Login',
-            'register':'Register',
-
+            'register':'Register'
         }
     }
 
@@ -204,3 +211,6 @@ class UserPassValidator(ValidatorMixin):
 
     def routes(self, blueprint):
         blueprint.add_url_rule(rule=self._get_url('LOGIN'), endpoint='login', view_func=self.login_view, methods=['GET', 'POST'])
+
+    def get_defaults(self):
+        return self.__DEFAULT_CONFIG

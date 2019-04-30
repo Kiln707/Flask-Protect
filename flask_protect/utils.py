@@ -1,3 +1,5 @@
+from flask import current_app
+from werkzeug.local import LocalProxy
 try:
     from urlparse import urlsplit
 except ImportError:  # pragma: no cover

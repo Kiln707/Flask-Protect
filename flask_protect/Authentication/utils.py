@@ -1,4 +1,6 @@
+from werkzeug.local import LocalProxy
+
 from ..utils import _protect
 
-_validator = _protect._validator
-_datastore = _validator._datastore
+_validator = LocalProxy(lambda: _protect._validator)
+_datastore = LocalProxy(lambda: _validator._datastore)

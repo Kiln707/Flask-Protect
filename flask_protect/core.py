@@ -8,16 +8,7 @@ class Protect(object):
         'BLUEPRINT_NAME': 'protect',
         'URL_PREFIX':None,
         'SUBDOMAIN':None,
-        'FLASH_MESSAGES': True,
-        'TEMPLATES': {
-            'LOGIN_TEMPLATE': 'protect/login_user.html',
-            'REGISTER_TEMPLATE': 'protect/register_user.html',
-            'RESET_PASS_TEMPLATE': 'protect/reset_password.html',
-            'FORGOT_PASS_TEMPLATE': 'protect/forgot_password.html',
-            'CHANGE_PASS_TEMPLATE': 'protect/change_password.html',
-            'SEND_CONFIRM_TEMPLATE': 'protect/send_confirmation.html',
-        }
-
+        'FLASH_MESSAGES': True
     }
 
     def __init__(self, app=None, validator=None, register_blueprint=True, **kwargs):
@@ -34,7 +25,7 @@ class Protect(object):
         self.set_config()
         if self._register_blueprint:
             app.register_blueprint(self.blueprint())
-            app.context_processor(url_for_protect=self.url_for_protect, protect=LocalProxy(lambda: current_app.extensions['protect']))
+            app.context_processor({'url_for_protect':self.url_for_protect, 'protect':LocalProxy(lambda: current_app.extensions['protect'])})
         app.extensions['protect']=self
 
     def blueprint(self):
@@ -43,7 +34,7 @@ class Protect(object):
                    subdomain=self._config['SUBDOMAIN'],
                    template_folder='templates')
         if self._validator:
-            self._validator.initialize_blueprint(bp, config=self.config)
+            self._validator.initialize_blueprint(bp, config=self._config)
         self._blueprint=bp
         return bp
 
@@ -62,16 +53,23 @@ class Protect(object):
 
     def _set_defaults(self, values):
         for key, value in values.items():
-            self.app.setdefault(key, value)
+            self.app.config.setdefault('PROTECT_'+key, value)
 
     def set_config(self):
-        self._set_config(self.app.config)
-        self._set_config(self.validator._kwargs)
+        self._set_config(self._get_app_defaults())
+        self._set_config(self._validator._kwargs)
         self._set_config(self._kwargs)
+
+    def _get_app_defaults(self):
+        val={}
+        for key, value in self.app.config.items():
+            if key.startswith('PROTECT_'):
+                val[key[len('PROTECT_'):]] = value
+        return val
 
     def _set_config(self, values):
         for key, value in values.items():
-            self.config['PROTECT' + key]=value
+            self._config[key]=value
 
     def get_config(self, key):
-        return self.config['PROTECT'+key]
+        return self.config[key]

@@ -1,5 +1,6 @@
 from builtins import object
 from .utils import _datastore
+from wtforms import ValidationError, validators
 
 #
 # Copied from Flask Security
@@ -11,13 +12,13 @@ class FormValidatorMixin(object):
             self.message = _protect.get_message(self.message)[0]
         return super(FormValidatorMixin, self).__call__(form, field)
 
-class EqualTo(ValidatorMixin, validators.EqualTo):
+class EqualTo(FormValidatorMixin, validators.EqualTo):
     pass
-class Required(ValidatorMixin, validators.DataRequired):
+class Required(FormValidatorMixin, validators.DataRequired):
     pass
-class Email(ValidatorMixin, validators.Email):
+class Email(FormValidatorMixin, validators.Email):
     pass
-class Length(ValidatorMixin, validators.Length):
+class Length(FormValidatorMixin, validators.Length):
     pass
 
 
