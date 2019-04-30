@@ -197,7 +197,10 @@ class UserPassValidator(ValidatorMixin):
         if validated:
             #TODO: Login User
             if not request.is_json:
-                return redirect()
+                return redirect(self._get_redirect('LOGIN', default=form.next.data))
+        if request.is_json:
+            return _render_json(form, include_auth_token=True) #TODO: FIX
+        return _security.render_template(config_value('LOGIN_USER_TEMPLATE'), login_user_form=form, **_ctx('login'))
 
     def routes(self, blueprint):
         blueprint.add_url_rule(rule=self._get_url('LOGIN'), endpoint='login', view_func=self.login_view, methods=['GET', 'POST'])

@@ -1,3 +1,5 @@
+from ..utils import validate_redirect_url
+
 class ValidatorMixin():
     __DEFAULT_CONFIG={}
     def __init__(self, **kwargs):
@@ -37,8 +39,6 @@ class ValidatorMixin():
         rv = (self._get_url(session.pop(key.lower(), None)) or
               self._get_url(self._config['REDIRECTS'][key] or None) or '/')
         return rv
-
-    
 
     def get_and_validate_form(self, form_key):
         form_class = self._get_form(form_key)
