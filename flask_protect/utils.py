@@ -6,6 +6,8 @@ except ImportError:  # pragma: no cover
     from urllib.parse import urlsplit
 
 _protect = LocalProxy(lambda: current_app.extensions['protect'])
+_validator = LocalProxy(lambda: _protect._validator)
+_datastore = LocalProxy(lambda: _validator._datastore)
 
 def url_for_protect(endpoint, **kwargs):
     #Return a URL for Protect blueprint

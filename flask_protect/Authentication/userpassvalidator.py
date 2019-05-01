@@ -1,16 +1,48 @@
-from flask import request
+from flask import request, render_template
 from .mixins import ValidatorMixin
 from .forms import LoginForm
+from .utils import _validator
 from passlib.context import CryptContext
 import os
+
+#
+#   UserPass Specific methods
+#
+
+def login(form):
+    def get_field(form, key):
+        return getattr(form, _validator.config_or_default('field_labels')[key])
+    user=None
+    #If allowing both email and username, or using email
+    if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or _validator.config_or_default('USE_EMAIL_AS_ID'):
+        user = _validator._datastore.get_user_by_email(get_field(form, 'email').data)
+    #If allowing both email and username and user not already found by email, OR not using email
+    if ( _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not _validator.config_or_default('USE_EMAIL_AS_ID'):
+        user = _validator._datastore.get_user_by_identifier(get_field(form, 'identifier').data)
+    #Valid user?
+    if _validator.validate_user(user, get_field('password').data):
+        _validator.login_user(user) #Valid, login user
+        return True
+    #Invalid username/email/identifier or password. Add error to field
+    if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL'):
+        get_field(form, 'identifier').errors.append(_validator.config_or_default())
+    elif _validator.config_or_default('USE_EMAIL_AS_ID'):
+        get_field(form, 'email').errors.append()
+    else:
+        get_field(form, 'identifier').errors.append()
+    return False
+
+#
+#
+#
 
 class UserPassValidator(ValidatorMixin):
     __DEFAULT_CONFIG={
         'ALLOW_BOTH_IDENTIFIER_AND_EMAIL':True, #Can a identifier or email address be used for validating?
-        'USE_IDENTIFIER_OR_EMAIL':'identifier', #Which field should be used if not both
-        'AUTO_UPDATE_HASH':True,
+        'USE_EMAIL_AS_ID':True, #Which field should be used if not both
         'IDENTIFIER_FIELD':'username', #Field in DB_Model for Identification
         'EMAIL_FIELD':'email',#Field in DB_Model for email
+        'AUTO_UPDATE_HASH':True,
         'PASSWORD_FIELD':'password',
         'CRYPT_SETTINGS':{
             'schemes':[
@@ -36,7 +68,7 @@ class UserPassValidator(ValidatorMixin):
             'CONFIRM_EMAIL':'/confirm'
             },
         'TEMPLATES': {
-            'LOGIN': 'protect/login_user.html',
+            'LOGIN': 'protect/form_template.html',
             'REGISTER': 'protect/register_user.html',
             'RESET_PASS': 'protect/reset_password.html',
             'CHANGE_PASS': 'protect/change_password.html',
@@ -58,7 +90,18 @@ class UserPassValidator(ValidatorMixin):
             'CHANGE_PASS': '',
             'CONFIRM_EMAIL': ''
             },
+        'ACTIONS':{
+            'LOGIN': login,
+            'LOGOUT': '',
+            'REGISTER': '',
+            'RESET_PASS': '',
+            'CHANGE_PASS': '',
+            'CONFIRM_EMAIL': ''
+        },
         'MSGS': {
+            'BAD_USER_PASS':('Invalid Username or password.', 'error'),
+            'BAD_EMAIL_PASS':('Invalid Email Address or Password.','error'),
+            #TODO: Filter through and remove unneeded messages
             'UNAUTHORIZED': (
                 ('You do not have permission to view this resource.'), 'error'),
             'CONFIRM_REGISTRATION': (
@@ -135,13 +178,18 @@ class UserPassValidator(ValidatorMixin):
             'REFRESH': (
                 ('Please reauthenticate to access this page.'), 'info')
         },
-        'field_labels':{
+        'FORM_FIELDS':{
             'identifier':'Username',
             'email':'Email Address',
             'password':'Password',
             'remember_me':'Remember Me',
             'login':'Login',
             'register':'Register'
+        },
+        'USER_FIELDS':{
+            'identifier':'username',
+            'email':'email_address',
+            'password':'password'
         }
     }
 
@@ -162,6 +210,10 @@ class UserPassValidator(ValidatorMixin):
         elif isinstance(crypt_context, CryptContext):
             self._cryptcontext=crypt_context
 
+    #
+    #   Validator Functions
+    #
+
     def validate_user(self, identifier, password, **kwargs):
         if isinstance(identifier, self._datastore.UserModel):
             user = identifier
@@ -178,6 +230,7 @@ class UserPassValidator(ValidatorMixin):
                 self._datastore.update_password_hash(user, newhash)
         else:
             self.dummy_verify()
+        return valid
 
     def hash_password(self, password, scheme=None, category=None, **kwargs):
         return self._cryptcontext.hash(self, password, scheme=scheme, category=category, **kwargs)
@@ -194,23 +247,34 @@ class UserPassValidator(ValidatorMixin):
     def crypt_update(**kwargs):
         self._cryptcontext.update(**kwargs)
 
-    def initialize(self, config, **kwargs):
-        super().initialize(config, **kwargs) #Set config
-        if not self._cryptcontext:
-            self._cryptcontext = CryptContext(**self._config['CRYPT_SETTINGS'])
+    #
+    #   View Methods
+    #
 
     def login_view(self):
         form, validated = self.get_and_validate_form('LOGIN')
         if validated:
-            #TODO: Login User
-            if not request.is_json:
-                return redirect(self._get_redirect('LOGIN', default=form.next.data))
-        if request.is_json:
-            return _render_json(form, include_auth_token=True) #TODO: FIX
-        return _security.render_template(config_value('LOGIN_USER_TEMPLATE'), login_user_form=form, **_ctx('login'))
+            login = self.config('ACTIONS')['LOGIN']
+            if login(form):
+                return redirect(self.config_or_default('REDIRECTS')['LOGIN'])
+        template = self.config_or_default('TEMPLATES')['LOGIN']
+        print(template, form)
+        return render_template(template)
+
+    #
+    #   Blueprint Section
+    #
 
     def routes(self, blueprint):
         blueprint.add_url_rule(rule=self._get_url('LOGIN'), endpoint='login', view_func=self.login_view, methods=['GET', 'POST'])
 
+    def initialize(self, config, **kwargs):
+        super().initialize(config, **kwargs) #Set config
+        if not self._cryptcontext:
+            self._cryptcontext = CryptContext(**self.config('CRYPT_SETTINGS', default=self.__DEFAULT_CONFIG['CRYPT_SETTINGS']))
+
     def get_defaults(self):
         return self.__DEFAULT_CONFIG
+
+    def config_or_default(self, key):
+        return (self.config(key, default=self.__DEFAULT_CONFIG[key]))

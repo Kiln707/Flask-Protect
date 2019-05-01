@@ -7,6 +7,9 @@ class ValidatorMixin():
         self._kwargs = kwargs
         self._config=None
 
+    def config(self, key, default=None):
+        return (self._config[key] or default)
+
     def get_defaults(self):
         raise NotImplementedError()
 
@@ -42,11 +45,7 @@ class ValidatorMixin():
         return rv
 
     def get_and_validate_form(self, form_key):
-        form_class = self._get_form(form_key)
-        if request.is_json:
-            form = form_class(MultiDict(request.get_json()))
-        else:
-            form = form_class(request.form)
+        form = self._get_form(form_key)()
         return form, form.validate_on_submit()
 
     def _get_url(self, key):

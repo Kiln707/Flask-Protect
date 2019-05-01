@@ -18,6 +18,8 @@ class Protect(object):
         self._config={}
         if app:
             self.init_app(app)
+    def _ctx(self):
+        return dict(url_for_protect=self.url_for_protect, protect=LocalProxy(lambda: current_app.extensions['protect']))
 
     def init_app(self, app):
         self.app = app
@@ -25,7 +27,7 @@ class Protect(object):
         self.set_config()
         if self._register_blueprint:
             app.register_blueprint(self.blueprint())
-            app.context_processor({'url_for_protect':self.url_for_protect, 'protect':LocalProxy(lambda: current_app.extensions['protect'])})
+            app.context_processor(self._ctx)
         app.extensions['protect']=self
 
     def blueprint(self):
