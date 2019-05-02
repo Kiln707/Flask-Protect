@@ -11,7 +11,7 @@ _datastore = LocalProxy(lambda: _validator._datastore)
 
 def url_for_protect(endpoint, **kwargs):
     #Return a URL for Protect blueprint
-    endpoint = '%s.%s' % (_security.blueprint_name, endpoint)
+    endpoint = '%s.%s' % (_protect.config('BLUEPRINT_NAME'), endpoint)
     return url_for(endpoint, **values)
 
 def validate_redirect_url(url):

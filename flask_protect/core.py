@@ -26,11 +26,12 @@ class Protect(object):
         self.set_defaults()
         self.set_config()
         if self._register_blueprint:
-            app.register_blueprint(self.blueprint())
+            self.blueprint = self.create_blueprint()
+            app.register_blueprint(self.blueprint)
             app.context_processor(self._ctx)
         app.extensions['protect']=self
 
-    def blueprint(self):
+    def create_blueprint(self):
         bp = Blueprint(self._config['BLUEPRINT_NAME'], __name__,
                    url_prefix=self._config['URL_PREFIX'],
                    subdomain=self._config['SUBDOMAIN'],
@@ -42,8 +43,8 @@ class Protect(object):
 
     def url_for_protect(self, endpoint, **kwargs):
         #Return a URL for Protect blueprint
-        endpoint = '%s.%s' % (self.blueprint_name, endpoint)
-        return url_for(endpoint, **values)
+        endpoint = '%s.%s' % (self.get_config('BLUEPRINT_NAME'), endpoint)
+        return url_for(endpoint, **kwargs)
 
     def get_message(key, **kwargs):
         rv = self.get_config('MSGS')['MSG_' + key]
@@ -74,4 +75,4 @@ class Protect(object):
             self._config[key]=value
 
     def get_config(self, key):
-        return self.config[key]
+        return self._config[key] or self.__DEFAULT_CORE_CONFIG[key]

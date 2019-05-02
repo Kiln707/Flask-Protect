@@ -2,13 +2,17 @@ from flask import request
 from ..utils import validate_redirect_url
 
 class ValidatorMixin():
-    __DEFAULT_CONFIG={}
-    def __init__(self, **kwargs):
+    def __init__(self, datatore, **kwargs):
         self._kwargs = kwargs
+        self._datastore=datastore
         self._config=None
 
-    def config(self, key, default=None):
-        return (self._config[key] or default)
+    #
+    #   Requires override
+    #
+
+    def login_user(self, user=None):
+        raise NotImplementedError()
 
     def get_defaults(self):
         raise NotImplementedError()
@@ -16,15 +20,19 @@ class ValidatorMixin():
     def routes(self, blueprint):
         raise NotImplementedError()
 
+    def get_defaults(self):
+        raise NotImplementedError()
+
+    #
+    #   Does not require override
+    #
+
     def initialize(self, config):
         self._config = config
 
     def initialize_blueprint(self, blueprint, config, **kwargs):
         self.initialize(config)
         self.routes(blueprint)
-
-    def get_defaults(self):
-        return self.__DEFAULT_CONFIG
 
     def _get_url(endpoint_or_url):
         """Returns a URL if a valid endpoint is found. Otherwise, returns the
@@ -41,7 +49,7 @@ class ValidatorMixin():
         :param key: The session or application configuration key to search for
         """
         rv = (self._get_url(session.pop(key.lower(), None)) or
-              self._get_url(self._config['REDIRECTS'][key] or None) or '/')
+              self._get_url(self.config_or_default('REDIRECTS')[key] or None) or '/')
         return rv
 
     def get_and_validate_form(self, form_key):
@@ -49,10 +57,10 @@ class ValidatorMixin():
         return form, form.validate_on_submit()
 
     def _get_url(self, key):
-        return self._config['URLS'][key]
+        return self.config_or_default('URLS')[key]
 
     def _get_form(self, key):
-        return self._config['FORMS'][key]
+        return self.config_or_default('FORMS')[key]
 
     def _get_redirect(self, key, default=None):
         urls = [
@@ -65,6 +73,28 @@ class ValidatorMixin():
         for url in urls:
             if validate_redirect_url(url):
                 return url
+
+    def config_or_default(self, key):
+        return (self._config[key] or self.get_defaults()[key])
+
+    def _get_login_manager(self, app, anonymous_user):
+        lm = LoginManager()
+        lm.anonymous_user = anonymous_user or AnonymousUser
+        #lm.localize_callback = localize_callback
+        lm.login_view = self.config_or_default('BLUEPRINT_NAME')+'.login'
+        lm.user_loader(self._datastore.get_user)
+        lm.request_loader(_request_loader)
+
+        if cv('FLASH_MESSAGES', app=app):
+            lm.login_message, lm.login_message_category = cv('MSG_LOGIN', app=app)
+            lm.needs_refresh_message, lm.needs_refresh_message_category = cv(
+                'MSG_REFRESH', app=app)
+        else:
+            lm.login_message = None
+            lm.needs_refresh_message = None
+
+        lm.init_app(app)
+        return lm
 
 class UserMixin():
     pass

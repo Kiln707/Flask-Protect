@@ -1,0 +1,8 @@
+<h1>Flask Protect</h1>
+<nav>
+  {% for route in endpoints() %}
+    <a href="{{ url_for(route) }}">{{route}}</a>
+  {% endfor %}
+</nav>
+{% block form %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% macro render_field(field) %}
+    {# Field types:
+        BooleanField  - Requires different Rendering
+        DateField
+        DateTimeField
+        DecimalField
+        FileField
+        MultipleFileField
+        FloatField
+        IntegerField
+        RadioField
+        SelectField
+        SelectMultipleField
+        SubmitField - Requires Different Rendering
+        StringField
+        HiddenField
+        PasswordField
+        TextAreaField
+        CSRFTokenField
+    #}
+    {% if field.type == "HiddenField"  or field.widget.input_type == 'hidden' %}
+      {{ field() }}
+    {% elif field.type == "CSRFTokenField" %}
+      {{ field() }}
+    {% else %}
+      {% if field.type == "BooleanField" %}
+          <div class='d-flex flex-row justify-content-left' style='padding:1%;'>
+            <div class='pl-4'>{{ field(class_="form-check-input")|safe }}</div>
+            <div><label class="form-check-label text-center" for="{{field.id}}">{{ field.label }}</label></div>
+          </div>
+      {% elif field.type == "SubmitField" %}
+          <div class='d-flex justify-content-center'>
+              {{ field(class_="btn btn-primary")|safe }}
+          </div>
+      {% else %}
+        <div class='row mx-auto my-3'>
+          <div class='col'>
+            <label for="{{ field.id }}" class='mr-auto'>{{ field.label.text }}</label>
+            <div class="col">
+                {{ field(class_="form-control input-block-level mx-auto", placeholder=field.label.text)|safe }}
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+    {% if field.errors %}
+      <ul class=errors>
+      {% for error in field.errors %}
+        <li>{{ error }}</li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+{% endmacro %}

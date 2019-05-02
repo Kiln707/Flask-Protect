@@ -1,4 +1,4 @@
-from flask import request, render_template
+from flask import request, render_template, redirect
 from .mixins import ValidatorMixin
 from .forms import LoginForm
 from .utils import _validator
@@ -11,25 +11,31 @@ import os
 
 def login(form):
     def get_field(form, key):
-        return getattr(form, _validator.config_or_default('field_labels')[key])
+        if hasattr(form, key):
+            return getattr(form, key)
+        return None
     user=None
     #If allowing both email and username, or using email
     if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or _validator.config_or_default('USE_EMAIL_AS_ID'):
-        user = _validator._datastore.get_user_by_email(get_field(form, 'email').data)
+        field = get_field(form, 'email')
+        if field:
+            user = _validator._datastore.get_user_by_email(field.data)
     #If allowing both email and username and user not already found by email, OR not using email
     if ( _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not _validator.config_or_default('USE_EMAIL_AS_ID'):
-        user = _validator._datastore.get_user_by_identifier(get_field(form, 'identifier').data)
+        field = get_field(form, 'identifier')
+        if field:
+            user = _validator._datastore.get_user_by_identifier(field.data)
     #Valid user?
-    if _validator.validate_user(user, get_field('password').data):
+    if _validator.validate_user(user, get_field(form, 'password').data):
         _validator.login_user(user) #Valid, login user
         return True
     #Invalid username/email/identifier or password. Add error to field
     if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL'):
-        get_field(form, 'identifier').errors.append(_validator.config_or_default())
+        get_field(form, 'identifier').errors.append(_validator.config_or_default('MSGS')['BAD_USER_PASS'][0])
     elif _validator.config_or_default('USE_EMAIL_AS_ID'):
-        get_field(form, 'email').errors.append()
+        get_field(form, 'email').errors.append(_validator.config_or_default('MSGS')['BAD_EMAIL_PASS'][0])
     else:
-        get_field(form, 'identifier').errors.append()
+        get_field(form, 'identifier').errors.append(_validator.config_or_default('MSGS')['BAD_USER_PASS'][0])
     return False
 
 #
@@ -44,6 +50,7 @@ class UserPassValidator(ValidatorMixin):
         'EMAIL_FIELD':'email',#Field in DB_Model for email
         'AUTO_UPDATE_HASH':True,
         'PASSWORD_FIELD':'password',
+        'LAYOUT_TEMPLATE':'protect/base.html',
         'CRYPT_SETTINGS':{
             'schemes':[
                 'bcrypt',
@@ -194,21 +201,9 @@ class UserPassValidator(ValidatorMixin):
     }
 
     def __init__(self, datastore, crypt_context=None, **kwargs):
-        super().__init__(**kwargs)
-        self._datastore=datastore
+        super().__init__(datastore=datastore, **kwargs)
         self._cryptcontext=None
         self._set_crypt_context(crypt_context)
-
-    def _set_crypt_context(self, crypt_context):
-        #Take given crypt_context. determine if it should be imported
-        #Or assigned. Else, Generate proper CryptContext with config
-        if crypt_context and type(crypt_context) is str:
-            if os.path.isfile(crypt_context):
-                self._cryptcontext=CryptContext.from_path(crypt_context)
-            else:
-                self._cryptcontext=CryptContext.from_string(crypt_context)
-        elif isinstance(crypt_context, CryptContext):
-            self._cryptcontext=crypt_context
 
     #
     #   Validator Functions
@@ -222,7 +217,7 @@ class UserPassValidator(ValidatorMixin):
         valid=False
         newhash=None
         if user:
-            if self.config['AUTO_UPDATE_HASH']:
+            if self.config_or_default('AUTO_UPDATE_HASH'):
                 valid, newhash = self.validate_password_and_update_hash(password, user.password, **kwargs)
             else:
                 valid = self.validate_password(password, user.password, **kwargs)
@@ -233,19 +228,22 @@ class UserPassValidator(ValidatorMixin):
         return valid
 
     def hash_password(self, password, scheme=None, category=None, **kwargs):
-        return self._cryptcontext.hash(self, password, scheme=scheme, category=category, **kwargs)
+        return self._cryptcontext.hash(password, scheme=scheme, category=category, **kwargs)
 
     def validate_password(self, password, hash, **kwargs):
         return self._cryptcontext.verify(password, hash, **kwargs)
 
     def validate_password_and_update_hash(self, password, hash, **kwargs):
-        return self._cryptcontext.verify_and_update()
+        return self._cryptcontext.verify_and_update(password, hash, **kwargs)
 
     def dummy_validate(self):
         self._cryptcontext.dummy_verify()
 
     def crypt_update(**kwargs):
         self._cryptcontext.update(**kwargs)
+
+    def login_user(self, user=None):
+        pass
 
     #
     #   View Methods
@@ -254,16 +252,25 @@ class UserPassValidator(ValidatorMixin):
     def login_view(self):
         form, validated = self.get_and_validate_form('LOGIN')
         if validated:
-            login = self.config('ACTIONS')['LOGIN']
+            login = self.config_or_default('ACTIONS')['LOGIN']
             if login(form):
                 return redirect(self.config_or_default('REDIRECTS')['LOGIN'])
         template = self.config_or_default('TEMPLATES')['LOGIN']
-        print(template, form)
-        return render_template(template)
+        return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
 
     #
     #   Blueprint Section
     #
+    def _set_crypt_context(self, crypt_context):
+        #Take given crypt_context. determine if it should be imported
+        #Or assigned. Else, Generate proper CryptContext with config
+        if crypt_context and type(crypt_context) is str:
+            if os.path.isfile(crypt_context):
+                self._cryptcontext=CryptContext.from_path(crypt_context)
+            else:
+                self._cryptcontext=CryptContext.from_string(crypt_context)
+        elif isinstance(crypt_context, CryptContext):
+            self._cryptcontext=crypt_context
 
     def routes(self, blueprint):
         blueprint.add_url_rule(rule=self._get_url('LOGIN'), endpoint='login', view_func=self.login_view, methods=['GET', 'POST'])
@@ -271,10 +278,7 @@ class UserPassValidator(ValidatorMixin):
     def initialize(self, config, **kwargs):
         super().initialize(config, **kwargs) #Set config
         if not self._cryptcontext:
-            self._cryptcontext = CryptContext(**self.config('CRYPT_SETTINGS', default=self.__DEFAULT_CONFIG['CRYPT_SETTINGS']))
+            self._cryptcontext = CryptContext(**self.config_or_default('CRYPT_SETTINGS'))
 
     def get_defaults(self):
         return self.__DEFAULT_CONFIG
-
-    def config_or_default(self, key):
-        return (self.config(key, default=self.__DEFAULT_CONFIG[key]))
