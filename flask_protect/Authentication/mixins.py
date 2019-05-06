@@ -2,7 +2,7 @@ from flask import request
 from ..utils import validate_redirect_url
 
 class ValidatorMixin():
-    def __init__(self, datatore, **kwargs):
+    def __init__(self, datastore, **kwargs):
         self._kwargs = kwargs
         self._datastore=datastore
         self._config=None
