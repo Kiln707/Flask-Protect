@@ -18,3 +18,18 @@ class LoginForm(BaseForm):
     password=PasswordField('password',validators=[])
     remember=BooleanField('remember_me')
     submit=SubmitField('login')
+
+class RegisterIdentifierForm(BaseForm):
+    identifier=StringField('identifier', validators=[])
+    email_address=StringField('email', validators=[])
+    confirm_email=StringField('confirm_email', validators=[])
+    password=PasswordField('password',validators=[])
+    confirm_password=PasswordField('confirm_password',validators=[])
+    submit=SubmitField('register')
+
+class RegisterEmailForm(BaseForm):
+    email_address=StringField('email', validators=[])
+    confirm_email=StringField('confirm_email', validators=[])
+    password=PasswordField('password',validators=[])
+    confirm_password=PasswordField('confirm_password',validators=[])
+    submit=SubmitField('register')
