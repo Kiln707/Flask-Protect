@@ -1,6 +1,6 @@
 from flask import request, render_template, redirect
 from .mixins import ValidatorMixin
-from .forms import LoginForm
+from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm
 from .utils import _validator
 from passlib.context import CryptContext
 import os
@@ -31,11 +31,11 @@ def login(form):
         return True
     #Invalid username/email/identifier or password. Add error to field
     if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL'):
-        get_field(form, 'identifier').errors.append(_validator.config_or_default('MSGS')['BAD_USER_PASS'][0])
+        get_field(form, 'identifier').errors.append(_validator.get_msg('BAD_USER_PASS')[0])
     elif _validator.config_or_default('USE_EMAIL_AS_ID'):
-        get_field(form, 'email').errors.append(_validator.config_or_default('MSGS')['BAD_EMAIL_PASS'][0])
+        get_field(form, 'email').errors.append(_validator.get_msg('BAD_EMAIL_PASS')[0])
     else:
-        get_field(form, 'identifier').errors.append(_validator.config_or_default('MSGS')['BAD_USER_PASS'][0])
+        get_field(form, 'identifier').errors.append(_validator.get_msg('BAD_USER_PASS')[0])
     return False
 
 #
@@ -83,8 +83,7 @@ class UserPassValidator(ValidatorMixin):
         },
         'FORMS':{
             'LOGIN': LoginForm,
-            'LOGOUT': None,
-            'REGISTER': None,
+            'REGISTER': RegisterIdentifierForm,
             'RESET_PASS':None,
             'CHANGE_PASS':None,
             'CONFIRM_EMAIL':None
@@ -252,10 +251,19 @@ class UserPassValidator(ValidatorMixin):
     def login_view(self):
         form, validated = self.get_and_validate_form('LOGIN')
         if validated:
-            login = self.config_or_default('ACTIONS')['LOGIN']
+            login = self.get_action('LOGIN')
             if login(form):
                 return redirect(self.config_or_default('REDIRECTS')['LOGIN'])
-        template = self.config_or_default('TEMPLATES')['LOGIN']
+        template = self.get_template('LOGIN')
+        return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
+
+    def register_view(self):
+        form, validated = self.get_and_validate_form('REGISTER')
+        if validated:
+            register = self.get_action('REGISTER')
+            if register(form):
+                return redrect(self.get_redirect('REGISTER'))
+        template = self.get_template('REGISTER')
         return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
 
     #
