@@ -48,24 +48,33 @@ class ValidatorMixin():
         """Returns the URL to redirect to after a user logs in successfully.
         :param key: The session or application configuration key to search for
         """
-        rv = (self._get_url(session.pop(key.lower(), None)) or
-              self._get_url(self.config_or_default('REDIRECTS')[key] or None) or '/')
+        rv = (self.get_url(session.pop(key.lower(), None)) or
+              self.get_url(self.config_or_default('REDIRECTS')[key] or None) or '/')
         return rv
 
     def get_and_validate_form(self, form_key):
-        form = self._get_form(form_key)()
+        form = self.get_form(form_key)()
         return form, form.validate_on_submit()
 
-    def _get_url(self, key):
+    def get_url(self, key):
         return self.config_or_default('URLS')[key]
 
-    def _get_form(self, key):
+    def get_action(self, key):
+        return self.config_or_default('ACTIONS')[key]
+
+    def get_form(self, key):
         return self.config_or_default('FORMS')[key]
+
+    def get_msg(self, key):
+        return self.config_or_default('MSGS')[key]
+
+    def get_template(self, key):
+        return self.config_or_default('TEMPLATES')[key]
 
     def _get_redirect(self, key, default=None):
         urls = [
-            self._get_url(request.args.get('next')),
-            self._get_url(request.form.get('next')),
+            self.get_url(request.args.get('next')),
+            self.get_url(request.form.get('next')),
             self._find_redirect(config_key)
         ]
         if declared:
