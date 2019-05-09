@@ -77,24 +77,5 @@ class ValidatorMixin():
     def config_or_default(self, key):
         return (self._config[key] or self.get_defaults()[key])
 
-    def _get_login_manager(self, app, anonymous_user):
-        lm = LoginManager()
-        lm.anonymous_user = anonymous_user or AnonymousUser
-        #lm.localize_callback = localize_callback
-        lm.login_view = self.config_or_default('BLUEPRINT_NAME')+'.login'
-        lm.user_loader(self._datastore.get_user)
-        lm.request_loader(_request_loader)
-
-        if cv('FLASH_MESSAGES', app=app):
-            lm.login_message, lm.login_message_category = cv('MSG_LOGIN', app=app)
-            lm.needs_refresh_message, lm.needs_refresh_message_category = cv(
-                'MSG_REFRESH', app=app)
-        else:
-            lm.login_message = None
-            lm.needs_refresh_message = None
-
-        lm.init_app(app)
-        return lm
-
 class UserMixin():
     pass
