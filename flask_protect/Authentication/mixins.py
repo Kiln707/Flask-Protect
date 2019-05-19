@@ -71,7 +71,7 @@ class ValidatorMixin():
     def get_template(self, key):
         return self.config_or_default('TEMPLATES')[key]
 
-    def _get_redirect(self, key, default=None):
+    def get_redirect(self, key, default=None):
         urls = [
             self.get_url(request.args.get('next')),
             self.get_url(request.form.get('next')),

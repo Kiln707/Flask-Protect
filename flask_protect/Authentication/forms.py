@@ -13,6 +13,10 @@ class BaseForm(FlaskForm):
             self.TIME_LIMIT = None
         super().__init__(*args, **kwargs)
 
+    def todict(self):
+        fields = inspect.getmembers(form)
+        return dict((key, value.data) for key, value in fields)
+
 class LoginForm(BaseForm):
     identifier=StringField('identifier', validators=[])
     password=PasswordField('password',validators=[])
@@ -26,6 +30,13 @@ class RegisterIdentifierForm(BaseForm):
     password=PasswordField('password',validators=[])
     confirm_password=PasswordField('confirm_password',validators=[])
     submit=SubmitField('register')
+
+    def todict(self):
+        def is_field_and_user_attr(member):
+            return isinstance(member, Field) and \
+                hasattr(_datastore.user_model, member.name)
+        fields = inspect.getmembers(form, is_field_and_user_attr)
+        return dict((key, value.data) for key, value in fields)
 
 class RegisterEmailForm(BaseForm):
     email_address=StringField('email', validators=[])

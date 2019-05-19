@@ -38,6 +38,17 @@ def login(form):
         get_field(form, 'identifier').errors.append(_validator.get_msg('BAD_USER_PASS')[0])
     return False
 
+def register(form):
+    user_data = form.todict()
+    user=_datastore.create_user(**userdata)
+
+
+
+
+
+
+
+
 #
 #
 #
@@ -46,8 +57,8 @@ class UserPassValidator(ValidatorMixin):
     __DEFAULT_CONFIG={
         'ALLOW_BOTH_IDENTIFIER_AND_EMAIL':True, #Can a identifier or email address be used for validating?
         'USE_EMAIL_AS_ID':True, #Which field should be used if not both
-        'IDENTIFIER_FIELD':'username', #Field in DB_Model for Identification
-        'EMAIL_FIELD':'email',#Field in DB_Model for email
+        'IDENTIFIER_FIELD':'username', #Field in DB_Model and form for Identification
+        'EMAIL_FIELD':'email',#Field in DB_Model and form for email
         'AUTO_UPDATE_HASH':True,
         'PASSWORD_FIELD':'password',
         'LAYOUT_TEMPLATE':'protect/base.html',
@@ -76,10 +87,10 @@ class UserPassValidator(ValidatorMixin):
             },
         'TEMPLATES': {
             'LOGIN': 'protect/form_template.html',
-            'REGISTER': 'protect/register_user.html',
-            'RESET_PASS': 'protect/reset_password.html',
-            'CHANGE_PASS': 'protect/change_password.html',
-            'CONFIRM_EMAIL': 'protect/send_confirmation.html',
+            'REGISTER': 'protect/form_template.html',
+            'RESET_PASS': 'protect/form_template.html',
+            'CHANGE_PASS': 'protect/form_template.html',
+            'CONFIRM_EMAIL': 'protect/form_template.html',
         },
         'FORMS':{
             'LOGIN': LoginForm,
@@ -248,23 +259,34 @@ class UserPassValidator(ValidatorMixin):
     #   View Methods
     #
 
-    def login_view(self):
-        form, validated = self.get_and_validate_form('LOGIN')
+    def view(self, action):
+        form, validated = self.get_and_validate_form(action)
         if validated:
-            login = self.get_action('LOGIN')
-            if login(form):
-                return redirect(self.config_or_default('REDIRECTS')['LOGIN'])
-        template = self.get_template('LOGIN')
+            action_func = self.get_action(action)
+            if action_func(form):
+                return self.get_redirect(action)
+        template = self.get_template(action)
         return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
 
+    def login_view(self):
+        return self.view('LOGIN')
+        # form, validated = self.get_and_validate_form('LOGIN')
+        # if validated:
+        #     login = self.get_action('LOGIN')
+        #     if login(form):
+        #         return redirect(self.get_redirect('LOGIN'))
+        # template = self.get_template('LOGIN')
+        # return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
+
     def register_view(self):
-        form, validated = self.get_and_validate_form('REGISTER')
-        if validated:
-            register = self.get_action('REGISTER')
-            if register(form):
-                return redrect(self.get_redirect('REGISTER'))
-        template = self.get_template('REGISTER')
-        return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
+        return self.view('REGISTER')
+        # form, validated = self.get_and_validate_form('REGISTER')
+        # if validated:
+        #     register = self.get_action('REGISTER')
+        #     if register(form):
+        #         return redrect(self.get_redirect('REGISTER'))
+        # template = self.get_template('REGISTER')
+        # return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
 
     #
     #   Blueprint Section
@@ -281,7 +303,8 @@ class UserPassValidator(ValidatorMixin):
             self._cryptcontext=crypt_context
 
     def routes(self, blueprint):
-        blueprint.add_url_rule(rule=self._get_url('LOGIN'), endpoint='login', view_func=self.login_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url('LOGIN'), endpoint='login', view_func=self.login_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url('REGISTER'), endpoint='register', view_func=self.register_view, methods=['GET', 'POST'])
 
     def initialize(self, config, **kwargs):
         super().initialize(config, **kwargs) #Set config
