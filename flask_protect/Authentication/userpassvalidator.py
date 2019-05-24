@@ -1,20 +1,18 @@
 from flask import request, render_template, redirect
 from .mixins import ValidatorMixin
 from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm
-from .utils import _validator
+from .utils import _protect, _validator, get_field, get_redirect_url
+from ..utils import safe_url, get_serializer
+from ..Session import FLogin_Manager
 from passlib.context import CryptContext
 import os
 
 #
 #   UserPass Specific methods
 #
-
 def login(form):
-    def get_field(form, key):
-        if hasattr(form, key):
-            return getattr(form, key)
-        return None
     user=None
+    #   GET User
     #If allowing both email and username, or using email
     if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or _validator.config_or_default('USE_EMAIL_AS_ID'):
         field = get_field(form, 'email')
@@ -25,35 +23,58 @@ def login(form):
         field = get_field(form, 'identifier')
         if field:
             user = _validator._datastore.get_user_by_identifier(field.data)
-    #Valid user?
-    if _validator.validate_user(user, get_field(form, 'password').data):
+    #       VALIDATE User
+    if user and _validator.validate_user(user, get_field(form, 'password').data):
         _validator.login_user(user) #Valid, login user
         return True
     #Invalid username/email/identifier or password. Add error to field
     if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL'):
-        get_field(form, 'identifier').errors.append(_validator.get_msg('BAD_USER_PASS')[0])
+        get_field(form, 'identifier').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
     elif _validator.config_or_default('USE_EMAIL_AS_ID'):
-        get_field(form, 'email').errors.append(_validator.get_msg('BAD_EMAIL_PASS')[0])
+        get_field(form, 'email').errors.append(_validator.get_msg_config('BAD_EMAIL_PASS')[0])
     else:
-        get_field(form, 'identifier').errors.append(_validator.get_msg('BAD_USER_PASS')[0])
+        get_field(form, 'identifier').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
     return False
 
 def register(form):
     user_data = form.todict()
     user=_datastore.create_user(**userdata)
+    return True
 
+def forgot_password(form):
+    # Verify account exists with given email address/Get User
+    field=get_field(form, 'email')
+    if field:
+        user = _validator._datastore.get_user_by_email(field.data)
+    # generate code to allow reset password
+    if user:
+        data = [str(user.id), _validator.hash(user.password)]
+        code = _validator.generate_code('FORGOT_PASS', data)
+        if _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
+            pass    # redirect to reset password
+        else:
+            # Send email, with link/code to reset password, redirect
+            send_mail()
+        return True
+    return False
 
+def reset_password(form):
+    #   take new password, hash and update user DB with new password
+    return False
 
+def change_password(form):
+    #   Check that current password is correct for user
+    #   take new password, hash and update user DB with new password
+    return False
 
-
-
-
+def confirm_email(form):
+    return False
 
 #
 #
 #
 
-class UserPassValidator(ValidatorMixin):
+class UserPassValidator(SerializingValidatorMixin):
     __DEFAULT_CONFIG={
         'ALLOW_BOTH_IDENTIFIER_AND_EMAIL':True, #Can a identifier or email address be used for validating?
         'USE_EMAIL_AS_ID':True, #Which field should be used if not both
@@ -62,6 +83,17 @@ class UserPassValidator(ValidatorMixin):
         'AUTO_UPDATE_HASH':True,
         'PASSWORD_FIELD':'password',
         'LAYOUT_TEMPLATE':'protect/base.html',
+        'FORGOT_PASS_DIRECT_TO_RESET_PASS':False,
+        '':'',
+        'EMAIL_SENDER': LocalProxy(lambda: current_app.config.get('MAIL_DEFAULT_SENDER', 'no-reply@localhost')),
+        'EMAIL_SUBJECT_REGISTER': 'Welcome',
+        'EMAIL_SUBJECT_CONFIRM': 'Please confirm your email',
+        'EMAIL_SUBJECT_PASSWORDLESS': 'Login instructions',
+        'EMAIL_SUBJECT_PASSWORD_NOTICE': 'Your password has been reset',
+        'EMAIL_SUBJECT_PASSWORD_CHANGE_NOTICE': 'Your password has been changed',
+        'EMAIL_SUBJECT_PASSWORD_RESET': 'Password reset instructions',
+        'EMAIL_PLAINTEXT': True,
+        'EMAIL_HTML': True,
         'CRYPT_SETTINGS':{
             'schemes':[
                 'bcrypt',
@@ -81,21 +113,22 @@ class UserPassValidator(ValidatorMixin):
             'LOGIN':'/login',
             'LOGOUT':'/logout',
             'REGISTER':'/register',
-            'RESET_PASS':'/reset',
+            'FORGOT_PASS':'/forgot_password',
             'CHANGE_PASS':'/change',
             'CONFIRM_EMAIL':'/confirm'
             },
         'TEMPLATES': {
             'LOGIN': 'protect/form_template.html',
             'REGISTER': 'protect/form_template.html',
-            'RESET_PASS': 'protect/form_template.html',
+            'FORGOT_PASS': 'protect/form_template.html',
             'CHANGE_PASS': 'protect/form_template.html',
             'CONFIRM_EMAIL': 'protect/form_template.html',
         },
         'FORMS':{
             'LOGIN': LoginForm,
             'REGISTER': RegisterIdentifierForm,
-            'RESET_PASS':None,
+            'FORGOT_PASS':,
+            'RESET_PASS':reset_password,
             'CHANGE_PASS':None,
             'CONFIRM_EMAIL':None
             },
@@ -103,17 +136,28 @@ class UserPassValidator(ValidatorMixin):
             'LOGIN': '',
             'LOGOUT': '',
             'REGISTER': '',
+            'FORGOT_PASS': '',
             'RESET_PASS': '',
             'CHANGE_PASS': '',
             'CONFIRM_EMAIL': ''
             },
         'ACTIONS':{
             'LOGIN': login,
-            'LOGOUT': '',
-            'REGISTER': '',
-            'RESET_PASS': '',
-            'CHANGE_PASS': '',
+            'LOGOUT': None,
+            'REGISTER': register,
+            'FORGOT_PASS': forgot_password,
+            'RESET_PASS':reset_password,
+            'CHANGE_PASS': change_password,
             'CONFIRM_EMAIL': ''
+        },
+        'SALT':{
+            'FORGOT_PASS': 'forgot-pass-salt',
+
+            'CONFIRM_SALT': 'confirm-salt',
+            'RESET_SALT': 'reset-salt',
+            'LOGIN_SALT': 'login-salt',
+            'CHANGE_SALT': 'change-salt',
+            'REMEMBER_SALT': 'remember-salt'
         },
         'MSGS': {
             'BAD_USER_PASS':('Invalid Username or password.', 'error'),
@@ -210,15 +254,16 @@ class UserPassValidator(ValidatorMixin):
         }
     }
 
-    def __init__(self, datastore, crypt_context=None, **kwargs):
-        super().__init__(datastore=datastore, **kwargs)
+    def __init__(self, datastore, login_manager, crypt_context=None, **kwargs):
+        super().__init__(datastore=datastore, login_manager=login_manager, **kwargs)
         self._cryptcontext=None
         self._set_crypt_context(crypt_context)
+        self._serializers={}
+
 
     #
     #   Validator Functions
     #
-
     def validate_user(self, identifier, password, **kwargs):
         if isinstance(identifier, self._datastore.UserModel):
             user = identifier
@@ -237,8 +282,11 @@ class UserPassValidator(ValidatorMixin):
             self.dummy_verify()
         return valid
 
-    def hash_password(self, password, scheme=None, category=None, **kwargs):
+    def hash(self, password, scheme=None, category=None, **kwargs):
         return self._cryptcontext.hash(password, scheme=scheme, category=category, **kwargs)
+
+    def hash_password(self, password, scheme=None, category=None, **kwargs):
+        return self.hash(password, scheme=None, category=None, **kwargs))
 
     def validate_password(self, password, hash, **kwargs):
         return self._cryptcontext.verify(password, hash, **kwargs)
@@ -252,41 +300,57 @@ class UserPassValidator(ValidatorMixin):
     def crypt_update(**kwargs):
         self._cryptcontext.update(**kwargs)
 
-    def login_user(self, user=None):
+    def login_user(self, user, remember=False, duration=None, force=False, fresh=True):
+        self._login_manager.login_user(user=user, remember=remember, duration=duration, force=force, fresh=fresh)
+
+    def logout_user(self):
+        self._login_manager.logout_user()
+    #
+    #   Other Utilites
+    #
+    def send_mail(self, subject, recipient, template, **context):
         pass
 
     #
     #   View Methods
     #
-
     def view(self, action):
         form, validated = self.get_and_validate_form(action)
         if validated:
-            action_func = self.get_action(action)
+            action_func = self.get_action_config(action)
             if action_func(form):
-                return self.get_redirect(action)
-        template = self.get_template(action)
+                redirect_url = get_redirect_url(self.get_redirect_config(action))
+                return redirect(redirect_url)
+        template = self.get_template_config(action)
         return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
 
     def login_view(self):
         return self.view('LOGIN')
-        # form, validated = self.get_and_validate_form('LOGIN')
-        # if validated:
-        #     login = self.get_action('LOGIN')
-        #     if login(form):
-        #         return redirect(self.get_redirect('LOGIN'))
-        # template = self.get_template('LOGIN')
-        # return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
 
     def register_view(self):
         return self.view('REGISTER')
-        # form, validated = self.get_and_validate_form('REGISTER')
-        # if validated:
-        #     register = self.get_action('REGISTER')
-        #     if register(form):
-        #         return redrect(self.get_redirect('REGISTER'))
-        # template = self.get_template('REGISTER')
-        # return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
+
+    def forgot_pass_view(self):
+        return self.view('FORGOT_PASS')
+
+    def change_pass_view(self):
+        return self.view('CHANGE_PASS')
+
+    def logout_view(self):
+        action_func = self.get_action_config(action)
+        if action_func:
+            action_func()
+        self.logout_user()
+        redirect_url = get_redirect_url(self.get_redirect_config(action))
+        return redirect(redirect_url)
+
+    def reset_pass_view(self, reset_code):
+        #If valid code for forgotten password:
+        return self.view('RESET_PASS')
+        #else, ERROR!
+
+    def confirm_email_view(self, confirm_code):
+        pass
 
     #
     #   Blueprint Section
@@ -303,11 +367,16 @@ class UserPassValidator(ValidatorMixin):
             self._cryptcontext=crypt_context
 
     def routes(self, blueprint):
-        blueprint.add_url_rule(rule=self.get_url('LOGIN'), endpoint='login', view_func=self.login_view, methods=['GET', 'POST'])
-        blueprint.add_url_rule(rule=self.get_url('REGISTER'), endpoint='register', view_func=self.register_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url_config('LOGIN'), endpoint='login', view_func=self.login_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url_config('REGISTER'), endpoint='register', view_func=self.register_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url_config('LOGOUT'), endpoint='logout', view_func=self.logout_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url_config('FORGOT_PASS'), endpoint='forgot_password', view_func=self.forgot_pass_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url_config('RESET_PASS'), endpoint='reset_password', view_func=self.reset_pass_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url_config('CHANGE_PASS'), endpoint='change_password', view_func=self.change_pass_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url_config('CONFIRM_EMAIL'), endpoint='confirm_email', view_func=self.confirm_email_view, methods=['GET', 'POST'])
 
-    def initialize(self, config, **kwargs):
-        super().initialize(config, **kwargs) #Set config
+    def initialize(self, app, blueprint, config, **kwargs):
+        super().initialize(app, blueprint, config, **kwargs)
         if not self._cryptcontext:
             self._cryptcontext = CryptContext(**self.config_or_default('CRYPT_SETTINGS'))
 

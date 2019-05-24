@@ -44,3 +44,29 @@ class RegisterEmailForm(BaseForm):
     password=PasswordField('password',validators=[])
     confirm_password=PasswordField('confirm_password',validators=[])
     submit=SubmitField('register')
+
+    def todict(self):
+        def is_field_and_user_attr(member):
+            return isinstance(member, Field) and \
+                hasattr(_datastore.user_model, member.name)
+        fields = inspect.getmembers(form, is_field_and_user_attr)
+        return dict((key, value.data) for key, value in fields)
+
+class ForgotPasswordForm(BaseForm):
+    email_address=StringField('email', validators=[])
+    submit=SubmitField('register')
+
+class ResetPasswordForm(BaseForm):
+    new_password=PasswordField('password',validators=[])
+    confirm_password=PasswordField('confirm_password',validators=[])
+    submit=SubmitField('login')
+
+class ChangePasswordForm(BaseForm):
+    currentpassword=PasswordField('current password',validators=[])
+    password=PasswordField('password',validators=[])
+    confirm_password=PasswordField('confirm_password',validators=[])
+    submit=SubmitField('login')
+
+class ConfirmEmailForm(BaseForm):
+    code=StringField('confirmation code', validators=[])
+    submit=SubmitField('login')

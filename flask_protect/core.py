@@ -2,13 +2,16 @@ from builtins import object
 from flask import current_app, Blueprint, url_for
 from werkzeug.local import LocalProxy
 
+from .utils import safe_url
+
 class Protect(object):
     __DEFAULT_CORE_CONFIG = {
         #Basic Functionality
         'BLUEPRINT_NAME': 'protect',
         'URL_PREFIX':None,
         'SUBDOMAIN':None,
-        'FLASH_MESSAGES': True
+        'FLASH_MESSAGES': True,
+        'SALT':'protect-salt'
     }
 
     def __init__(self, app=None, validator=None, register_blueprint=True, **kwargs):
@@ -18,6 +21,7 @@ class Protect(object):
         self._config={}
         if app:
             self.init_app(app)
+
     def _ctx(self):
         return dict(url_for_protect=self.url_for_protect, protect=LocalProxy(lambda: current_app.extensions['protect']))
 
@@ -37,9 +41,13 @@ class Protect(object):
                    subdomain=self._config['SUBDOMAIN'],
                    template_folder='templates')
         if self._validator:
-            self._validator.initialize_blueprint(bp, config=self._config)
+            self._validator.initialize_blueprint(app, bp, config=self._config)
         self._blueprint=bp
         return bp
+
+    #
+    #   Utility function
+    #
 
     def url_for_protect(self, endpoint, **kwargs):
         #Return a URL for Protect blueprint
