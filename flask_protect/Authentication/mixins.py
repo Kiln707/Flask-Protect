@@ -60,6 +60,47 @@ class ValidatorMixin():
     def config_or_default(self, key):
         return (self._config[key] or self.get_defaults()[key])
 
+class CryptContextValidatorMixin(ValidatorMixin):
+    def __init__(self, datastore, login_manager, crypt_context=None, **kwargs):
+        super().__init__(datastore=datastore, login_manager=login_manager, **kwargs)
+        self._cryptcontext=None
+        self._set_crypt_context(crypt_context)
+
+    def hash(self, password, scheme=None, category=None, **kwargs):
+        return self._cryptcontext.hash(password, scheme=scheme, category=category, **kwargs)
+
+    def hash_password(self, password, scheme=None, category=None, **kwargs):
+        return self.hash(password, scheme=None, category=None, **kwargs))
+
+    def validate_password(self, password, hash, **kwargs):
+        return self._cryptcontext.verify(password, hash, **kwargs)
+
+    def validate_password_and_update_hash(self, password, hash, **kwargs):
+        return self._cryptcontext.verify_and_update(password, hash, **kwargs)
+
+    def dummy_validate(self):
+        self._cryptcontext.dummy_verify()
+
+    def crypt_update(**kwargs):
+        self._cryptcontext.update(**kwargs)
+
+    def _set_crypt_context(self, crypt_context):
+        #Take given crypt_context. determine if it should be imported
+        #Or assigned. Else, Generate proper CryptContext with config
+        if crypt_context and type(crypt_context) is str:
+            if os.path.isfile(crypt_context):
+                self._cryptcontext=CryptContext.from_path(crypt_context)
+            else:
+                self._cryptcontext=CryptContext.from_string(crypt_context)
+        elif isinstance(crypt_context, CryptContext):
+            self._cryptcontext=crypt_context
+
+    def initialize(self, app, blueprint, config, **kwargs):
+        super().initialize(app, blueprint, config, **kwargs)
+        if not self._cryptcontext:
+            self._cryptcontext = CryptContext(**self.config_or_default('CRYPT_SETTINGS'))
+
+
 class SerializingValidatorMixin(ValidatorMixin):
     def __init__(self, datastore, login_manager, serializers={}, **kwargs):
         super().__init__(datastore=datastore, login_manager=login_manager, **kwargs)
@@ -87,20 +128,11 @@ class SerializingValidatorMixin(ValidatorMixin):
     def generate_token(self, serializer_name, data):
         return self.get_serializer(serializer_name).dumps(data)
 
-    def get_token_status(self, token, serializer_name, max_age=None, return_data=False):
-        """Get the status of a token.
-        :param token: The token to check
-        :param serializer: The name of the seriailzer. Can be one of the
-                           following: ``confirm``, ``login``, ``reset``
-        :param max_age: The name of the max age config option. Can be on of
-                        the following: ``CONFIRM_EMAIL``, ``LOGIN``,
-                        ``RESET_PASSWORD``
-        """
+    def load_token(self, token, serializer_name, max_age=None):
         serializer = self.get_serializer(serializer_name)
         max_age = get_within_delta(max_age)
-        user, data = None, None
+        data = None
         expired, invalid = False, False
-
         try:
             data = serializer.loads(token, max_age=max_age)
         except SignatureExpired:
@@ -108,16 +140,8 @@ class SerializingValidatorMixin(ValidatorMixin):
             expired = True
         except (BadSignature, TypeError, ValueError):
             invalid = True
-
-        if data:
-            user = _datastore.find_user(id=data[0])
-
-        expired = expired and (user is not None)
-
-        if return_data:
-            return expired, invalid, user, data
-        else:
-            return expired, invalid, user
+        expired = expired and (data is not None)
+        return expired, invalid, data
 
     def initialize(self, app, blueprint, config, **kwargs):
         super().initialize(app, blueprint, config, **kwargs)
