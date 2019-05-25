@@ -2,7 +2,7 @@ from flask import request, render_template, redirect
 from .mixins import ValidatorMixin
 from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm
 from .utils import _protect, _validator, get_field, get_redirect_url
-from ..utils import safe_url, get_serializer
+from ..utils import safe_url, get_serializer, set_request_next, url_for_protect
 from ..Session import FLogin_Manager
 from passlib.context import CryptContext
 import os
@@ -39,6 +39,8 @@ def login(form):
 def register(form):
     user_data = form.todict()
     user=_datastore.create_user(**userdata)
+    #if confirm email address
+    #generate code, and email to address
     return True
 
 def forgot_password(form):
@@ -48,13 +50,16 @@ def forgot_password(form):
         user = _validator._datastore.get_user_by_email(field.data)
     # generate code to allow reset password
     if user:
-        data = [str(user.id), _validator.hash(user.password)]
-        code = _validator.generate_code('FORGOT_PASS', data)
         if _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
-            pass    # redirect to reset password
+            set_request_next(url_for_protect('reset_password'))
         else:
             # Send email, with link/code to reset password, redirect
-            send_mail()
+            code = _validator.generate_code(user, 'FORGOT_PASS')
+            subject=_validator.config_or_default('EMAIL_SUBJECT_PASSWORD_RESET')
+            recipient=user.email
+            template=None
+            context={}
+            _validator.send_mail()
         return True
     return False
 
@@ -74,7 +79,7 @@ def confirm_email(form):
 #
 #
 
-class UserPassValidator(SerializingValidatorMixin):
+class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin):
     __DEFAULT_CONFIG={
         'ALLOW_BOTH_IDENTIFIER_AND_EMAIL':True, #Can a identifier or email address be used for validating?
         'USE_EMAIL_AS_ID':True, #Which field should be used if not both
@@ -255,11 +260,7 @@ class UserPassValidator(SerializingValidatorMixin):
     }
 
     def __init__(self, datastore, login_manager, crypt_context=None, **kwargs):
-        super().__init__(datastore=datastore, login_manager=login_manager, **kwargs)
-        self._cryptcontext=None
-        self._set_crypt_context(crypt_context)
-        self._serializers={}
-
+        super().__init__(datastore=datastore, login_manager=login_manager, crypt_context=crypt_context, **kwargs)
 
     #
     #   Validator Functions
@@ -282,32 +283,20 @@ class UserPassValidator(SerializingValidatorMixin):
             self.dummy_verify()
         return valid
 
-    def hash(self, password, scheme=None, category=None, **kwargs):
-        return self._cryptcontext.hash(password, scheme=scheme, category=category, **kwargs)
-
-    def hash_password(self, password, scheme=None, category=None, **kwargs):
-        return self.hash(password, scheme=None, category=None, **kwargs))
-
-    def validate_password(self, password, hash, **kwargs):
-        return self._cryptcontext.verify(password, hash, **kwargs)
-
-    def validate_password_and_update_hash(self, password, hash, **kwargs):
-        return self._cryptcontext.verify_and_update(password, hash, **kwargs)
-
-    def dummy_validate(self):
-        self._cryptcontext.dummy_verify()
-
-    def crypt_update(**kwargs):
-        self._cryptcontext.update(**kwargs)
-
     def login_user(self, user, remember=False, duration=None, force=False, fresh=True):
         self._login_manager.login_user(user=user, remember=remember, duration=duration, force=force, fresh=fresh)
 
     def logout_user(self):
         self._login_manager.logout_user()
+
     #
     #   Other Utilites
     #
+    def generate_code(self, user, action):
+        password_hash = self.hash(user.password) if user.password else None
+        data = [str(user.id), password_hash]
+        return self.generate_token(self, action, data)
+
     def send_mail(self, subject, recipient, template, **context):
         pass
 
@@ -355,17 +344,6 @@ class UserPassValidator(SerializingValidatorMixin):
     #
     #   Blueprint Section
     #
-    def _set_crypt_context(self, crypt_context):
-        #Take given crypt_context. determine if it should be imported
-        #Or assigned. Else, Generate proper CryptContext with config
-        if crypt_context and type(crypt_context) is str:
-            if os.path.isfile(crypt_context):
-                self._cryptcontext=CryptContext.from_path(crypt_context)
-            else:
-                self._cryptcontext=CryptContext.from_string(crypt_context)
-        elif isinstance(crypt_context, CryptContext):
-            self._cryptcontext=crypt_context
-
     def routes(self, blueprint):
         blueprint.add_url_rule(rule=self.get_url_config('LOGIN'), endpoint='login', view_func=self.login_view, methods=['GET', 'POST'])
         blueprint.add_url_rule(rule=self.get_url_config('REGISTER'), endpoint='register', view_func=self.register_view, methods=['GET', 'POST'])
@@ -374,11 +352,6 @@ class UserPassValidator(SerializingValidatorMixin):
         blueprint.add_url_rule(rule=self.get_url_config('RESET_PASS'), endpoint='reset_password', view_func=self.reset_pass_view, methods=['GET', 'POST'])
         blueprint.add_url_rule(rule=self.get_url_config('CHANGE_PASS'), endpoint='change_password', view_func=self.change_pass_view, methods=['GET', 'POST'])
         blueprint.add_url_rule(rule=self.get_url_config('CONFIRM_EMAIL'), endpoint='confirm_email', view_func=self.confirm_email_view, methods=['GET', 'POST'])
-
-    def initialize(self, app, blueprint, config, **kwargs):
-        super().initialize(app, blueprint, config, **kwargs)
-        if not self._cryptcontext:
-            self._cryptcontext = CryptContext(**self.config_or_default('CRYPT_SETTINGS'))
 
     def get_defaults(self):
         return self.__DEFAULT_CONFIG
