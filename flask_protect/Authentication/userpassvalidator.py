@@ -54,12 +54,7 @@ def forgot_password(form):
             set_request_next(url_for_protect('reset_password'))
         else:
             # Send email, with link/code to reset password, redirect
-            code = _validator.generate_code(user, 'FORGOT_PASS')
-            subject=_validator.config_or_default('EMAIL_SUBJECT_PASSWORD_RESET')
-            recipient=user.email
-            template=None
-            context={}
-            _validator.send_mail()
+            _validator.send_reset_password_instructions(user)
         return True
     return False
 
@@ -91,14 +86,36 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin):
         'FORGOT_PASS_DIRECT_TO_RESET_PASS':False,
         '':'',
         'EMAIL_SENDER': LocalProxy(lambda: current_app.config.get('MAIL_DEFAULT_SENDER', 'no-reply@localhost')),
-        'EMAIL_SUBJECT_REGISTER': 'Welcome',
-        'EMAIL_SUBJECT_CONFIRM': 'Please confirm your email',
-        'EMAIL_SUBJECT_PASSWORDLESS': 'Login instructions',
-        'EMAIL_SUBJECT_PASSWORD_NOTICE': 'Your password has been reset',
-        'EMAIL_SUBJECT_PASSWORD_CHANGE_NOTICE': 'Your password has been changed',
-        'EMAIL_SUBJECT_PASSWORD_RESET': 'Password reset instructions',
         'EMAIL_PLAINTEXT': True,
         'EMAIL_HTML': True,
+        'EMAIL_SUBJECT':{
+            'REGISTER': 'Welcome',
+            'CONFIRM_INSTRUCTIONS': 'Please confirm your email',
+            'PASSWORD_RESET_NOTICE': 'Your password has been reset',
+            'PASSWORD_CHANGE_NOTICE': 'Your password has been changed',
+            'RESET_INSTRUCTIONS': 'Password reset instructions',
+        },
+        'EMAIL_HTML_TEMPLATE':{
+            'REGISTER': 'protect/email/welcome.html',
+            'CONFIRM_INSTRUCTIONS': 'protect/email/confirm_email.html',
+            'PASSWORD_RESET_NOTICE': 'protect/email/notice.html',
+            'PASSWORD_CHANGE_NOTICE': 'protect/email/notice.html',
+            'RESET_INSTRUCTIONS': 'protect/email/reset_instructions.html',
+        },
+        'EMAIL_TXT_TEMPLATE':{
+            'REGISTER': 'protect/email/welcome.txt',
+            'CONFIRM_INSTRUCTIONS': 'protect/email/confirm_email.txt',
+            'PASSWORD_RESET_NOTICE': 'protect/email/notice.txt',
+            'PASSWORD_CHANGE_NOTICE': 'protect/email/notice.txt',
+            'RESET_INSTRUCTIONS': 'protect/email/reset_instructions.txt',
+        },
+        'EMAIL_BODY':{
+            'REGISTER': 'Welcome!',
+            'CONFIRM_INSTRUCTIONS': 'Please confirm your email address!',
+            'PASSWORD_RESET_NOTICE': 'Your password has recently been reset!',
+            'PASSWORD_CHANGE_NOTICE': 'Your password has recently been changed',
+            'RESET_INSTRUCTIONS': 'To reset your password...',
+        },
         'CRYPT_SETTINGS':{
             'schemes':[
                 'bcrypt',
@@ -253,14 +270,15 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin):
             'register':'Register'
         },
         'USER_FIELDS':{
-            'identifier':'username',
-            'email':'email_address',
-            'password':'password'
+            'IDENTIFIER':'username',
+            'EMAIL':'email_address',
+            'PASSWORD':'password'
         }
     }
 
-    def __init__(self, datastore, login_manager, crypt_context=None, **kwargs):
+    def __init__(self, datastore, login_manager, crypt_context=None, email_connection=None, **kwargs):
         super().__init__(datastore=datastore, login_manager=login_manager, crypt_context=crypt_context, **kwargs)
+        self._mail=email_connection
 
     #
     #   Validator Functions
@@ -289,6 +307,23 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin):
     def logout_user(self):
         self._login_manager.logout_user()
 
+
+    def send_reset_password_instructions(self, user):
+        context={'user':user, 'code':_validator.generate_code(user, 'FORGOT_PASS') }
+        _validator.send_mail('FORGOT_PASS', user, context=**context))
+
+    def send_comfirm_email_instructions(self, user):
+        context={'user':user, 'code':_validator.generate_code(user, 'CONFIRM_EMAIL') }
+        _validator.send_mail('CONFIRM_EMAIL', user, context=**context))
+
+    def send_password_reset_notification(self, user, content):
+        context={'user':user, 'code':_validator.generate_code(user, 'PASSWORD_RESET') }
+        _validator.send_mail('PASSWORD_RESET', user, context=**context))
+
+    def send_password_change_notification(self, user, content):
+        context={'user':user, 'code':_validator.generate_code(user, 'PASSWORD_CHANGE') }
+        _validator.send_mail('PASSWORD_CHANGE', user, context=**context))
+
     #
     #   Other Utilites
     #
@@ -297,8 +332,18 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin):
         data = [str(user.id), password_hash]
         return self.generate_token(self, action, data)
 
-    def send_mail(self, subject, recipient, template, **context):
-        pass
+    def send_mail(self, action, user **context):
+        subject=_validator.config_or_default('EMAIL_SUBJECT')[action]
+        recipient=getattr(user, self.get_user_field('EMAIL'))
+        msg = Message(subject=subject, sender=self.config_or_default('EMAIL_SENDER'), recipients=[recipient])
+        if self.config_or_default('EMAIL_PLAINTEXT'):
+            template=self.config_or_default('EMAIL_TXT_TEMPLATE')[action]
+            msg.body=render_template(template, **context)
+        if self.config_or_default('EMAIL_HTML'):
+            template=self.config_or_default('EMAIL_HTML_TEMPLATE')[action]
+            msg.html=render_template(template, **context)
+        _protect.send_mail(msg)
+
 
     #
     #   View Methods

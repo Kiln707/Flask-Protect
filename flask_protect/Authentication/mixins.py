@@ -57,6 +57,9 @@ class ValidatorMixin():
     def get_redirect_config(self, key):
         return self.config_or_default('REDIRECT')[key]
 
+    def get_user_field(self, key):
+        return self.config_or_default('USER_FIELDS')[key]
+
     def config_or_default(self, key):
         return (self._config[key] or self.get_defaults()[key])
 
