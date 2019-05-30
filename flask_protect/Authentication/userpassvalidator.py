@@ -74,7 +74,7 @@ def confirm_email(form):
 #
 #
 
-class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin):
+class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin):
     __DEFAULT_CONFIG={
         'ALLOW_BOTH_IDENTIFIER_AND_EMAIL':True, #Can a identifier or email address be used for validating?
         'USE_EMAIL_AS_ID':True, #Which field should be used if not both
@@ -84,7 +84,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin):
         'PASSWORD_FIELD':'password',
         'LAYOUT_TEMPLATE':'protect/base.html',
         'FORGOT_PASS_DIRECT_TO_RESET_PASS':False,
-        '':'',
+        'SEND_EMAIL':True,
         'EMAIL_SENDER': LocalProxy(lambda: current_app.config.get('MAIL_DEFAULT_SENDER', 'no-reply@localhost')),
         'EMAIL_PLAINTEXT': True,
         'EMAIL_HTML': True,
@@ -276,9 +276,9 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin):
         }
     }
 
-    def __init__(self, datastore, login_manager, crypt_context=None, email_connection=None, **kwargs):
+    def __init__(self, datastore, login_manager, crypt_context=None, **kwargs):
         super().__init__(datastore=datastore, login_manager=login_manager, crypt_context=crypt_context, **kwargs)
-        self._mail=email_connection
+
 
     #
     #   Validator Functions
@@ -333,17 +333,17 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin):
         return self.generate_token(self, action, data)
 
     def send_mail(self, action, user **context):
-        subject=_validator.config_or_default('EMAIL_SUBJECT')[action]
-        recipient=getattr(user, self.get_user_field('EMAIL'))
-        msg = Message(subject=subject, sender=self.config_or_default('EMAIL_SENDER'), recipients=[recipient])
-        if self.config_or_default('EMAIL_PLAINTEXT'):
-            template=self.config_or_default('EMAIL_TXT_TEMPLATE')[action]
-            msg.body=render_template(template, **context)
-        if self.config_or_default('EMAIL_HTML'):
-            template=self.config_or_default('EMAIL_HTML_TEMPLATE')[action]
-            msg.html=render_template(template, **context)
-        _protect.send_mail(msg)
-
+        if self._mail:
+            subject=_validator.config_or_default('EMAIL_SUBJECT')[action]
+            recipient=getattr(user, self.get_user_field('EMAIL'))
+            msg = Message(subject=subject, sender=self.config_or_default('EMAIL_SENDER'), recipients=[recipient])
+            if self.config_or_default('EMAIL_PLAINTEXT'):
+                template=self.config_or_default('EMAIL_TXT_TEMPLATE')[action]
+                msg.body=render_template(template, **context)
+            if self.config_or_default('EMAIL_HTML'):
+                template=self.config_or_default('EMAIL_HTML_TEMPLATE')[action]
+                msg.html=render_template(template, **context)
+            self._mail.send(msg)
 
     #
     #   View Methods
@@ -397,6 +397,11 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin):
         blueprint.add_url_rule(rule=self.get_url_config('RESET_PASS'), endpoint='reset_password', view_func=self.reset_pass_view, methods=['GET', 'POST'])
         blueprint.add_url_rule(rule=self.get_url_config('CHANGE_PASS'), endpoint='change_password', view_func=self.change_pass_view, methods=['GET', 'POST'])
         blueprint.add_url_rule(rule=self.get_url_config('CONFIRM_EMAIL'), endpoint='confirm_email', view_func=self.confirm_email_view, methods=['GET', 'POST'])
+
+    def initialize(self, app, blueprint, config, **kwargs):
+        super().initialize(app, blueprint, config, **kwargs)
+        if not current_app.extensions.get('mail'):
+            self._config['SEND_EMAIL']=False
 
     def get_defaults(self):
         return self.__DEFAULT_CONFIG
