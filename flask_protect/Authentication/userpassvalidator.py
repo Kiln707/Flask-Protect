@@ -14,17 +14,9 @@ def login(form):
     user=None
     #   GET User
     #If allowing both email and username, or using email
-    if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or _validator.config_or_default('USE_EMAIL_AS_ID'):
-        field = get_field(form, 'email')
-        if field:
-            user = _validator._datastore.get_user_by_email(field.data)
-    #If allowing both email and username and user not already found by email, OR not using email
-    if ( _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not _validator.config_or_default('USE_EMAIL_AS_ID'):
-        field = get_field(form, 'identifier')
-        if field:
-            user = _validator._datastore.get_user_by_identifier(field.data)
+    user = _validator.get_user_from_form(form)
     #       VALIDATE User
-    if user and _validator.validate_user(user, get_field(form, 'password').data):
+    if _validator.validate_user(user, get_field(form, 'password').data):
         _validator.login_user(user) #Valid, login user
         return True
     #Invalid username/email/identifier or password. Add error to field
@@ -45,9 +37,7 @@ def register(form):
 
 def forgot_password(form):
     # Verify account exists with given email address/Get User
-    field=get_field(form, 'email')
-    if field:
-        user = _validator._datastore.get_user_by_email(field.data)
+    user = _validator.get_user_from_form(form=form)
     # generate code to allow reset password
     if user:
         if _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
@@ -60,14 +50,20 @@ def forgot_password(form):
 
 def reset_password(form):
     #   take new password, hash and update user DB with new password
+    user = _validator.get_user_from_form(form=form)
+    if user:
+        _validator.reset_user_password(user, get_field(form=form, key='new_password'))
+        return True
     return False
 
 def change_password(form):
     #   Check that current password is correct for user
     #   take new password, hash and update user DB with new password
-    return False
-
-def confirm_email(form):
+    user = _validator.get_user_from_form(form=form)
+    if user:
+        current_password = get_field(form=form, key='current_password')
+        new_password = get_field(form=form, key='new_password')
+        return _validator.change_user_password(identifier=user, current_password=current_password, new_password=new_password)
     return False
 
 #
@@ -77,11 +73,8 @@ def confirm_email(form):
 class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin):
     __DEFAULT_CONFIG={
         'ALLOW_BOTH_IDENTIFIER_AND_EMAIL':True, #Can a identifier or email address be used for validating?
-        'USE_EMAIL_AS_ID':True, #Which field should be used if not both
-        'IDENTIFIER_FIELD':'username', #Field in DB_Model and form for Identification
-        'EMAIL_FIELD':'email',#Field in DB_Model and form for email
+        'USE_EMAIL_AS_ID':True, #Should email be used if not both
         'AUTO_UPDATE_HASH':True,
-        'PASSWORD_FIELD':'password',
         'LAYOUT_TEMPLATE':'protect/base.html',
         'FORGOT_PASS_DIRECT_TO_RESET_PASS':False,
         'SEND_EMAIL':True,
@@ -136,8 +129,9 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
             'LOGOUT':'/logout',
             'REGISTER':'/register',
             'FORGOT_PASS':'/forgot_password',
-            'CHANGE_PASS':'/change',
-            'CONFIRM_EMAIL':'/confirm'
+            'RESET_PASS': '/reset_password'
+            'CHANGE_PASS':'/change_password',
+            'CONFIRM_EMAIL':'/confirm_account'
             },
         'TEMPLATES': {
             'LOGIN': 'protect/form_template.html',
@@ -279,34 +273,59 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
     def __init__(self, datastore, login_manager, crypt_context=None, **kwargs):
         super().__init__(datastore=datastore, login_manager=login_manager, crypt_context=crypt_context, **kwargs)
 
-
     #
     #   Validator Functions
     #
+    def get_user(self, identifier):
+        user=None
+        if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or _validator.config_or_default('USE_EMAIL_AS_ID'):
+            user = _validator._datastore.get_user_by_email(identifier)
+        #If allowing both email and username and user not already found by email, OR not using email
+        if ( _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not _validator.config_or_default('USE_EMAIL_AS_ID'):
+            user = _validator._datastore.get_user_by_identifier(identifier)
+        return user
+
+    def get_user_from_form(self, form):
+        field=None
+        if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or _validator.config_or_default('USE_EMAIL_AS_ID'):
+            field = get_field(form, 'email')
+        #If allowing both email and username and user not already found by email, OR not using email
+        if ( _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not field ) or not _validator.config_or_default('USE_EMAIL_AS_ID'):
+            field = get_field(form, 'identifier')
+        return self.get_user(identifier=field.data)
+
     def validate_user(self, identifier, password, **kwargs):
-        if isinstance(identifier, self._datastore.UserModel):
-            user = identifier
-        else:
-            user = self._datastore.get_user(identifier)
+        user = self.get_user(identifier)
         valid=False
-        newhash=None
+        new_hash=None
         if user:
             if self.config_or_default('AUTO_UPDATE_HASH'):
-                valid, newhash = self.validate_password_and_update_hash(password, user.password, **kwargs)
+                valid, new_hash = self.validate_password_and_update_hash(password, user.password, **kwargs)
             else:
                 valid = self.validate_password(password, user.password, **kwargs)
-            if valid and newhash:
-                self._datastore.update_password_hash(user, newhash)
+            if valid and new_hash:
+                self._datastore.update_password_hash(user, new_hash)
         else:
             self.dummy_verify()
         return valid
+
+    def change_user_password(self, identifier, current_password, new_password):
+        user = self.get_user(identifier)
+        if self.validate_user(user, current_password):
+            self.reset_user_password(user, new_password)
+            return True
+        return False
+
+    def reset_user_password(self, identifier, new_password):
+        user = self.get_user(identifier)
+        new_hash = self.hash_password(new_password)
+        self._datastore.update_password_hash(user, new_hash)
 
     def login_user(self, user, remember=False, duration=None, force=False, fresh=True):
         self._login_manager.login_user(user=user, remember=remember, duration=duration, force=force, fresh=fresh)
 
     def logout_user(self):
         self._login_manager.logout_user()
-
 
     def send_reset_password_instructions(self, user):
         context={'user':user, 'code':_validator.generate_code(user, 'FORGOT_PASS') }
@@ -333,7 +352,8 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         return self.generate_token(self, action, data)
 
     def send_mail(self, action, user **context):
-        if self._mail:
+        if self.config_or_default('SEND_EMAIL'):
+            mail=current_app.extensions.get('mail')
             subject=_validator.config_or_default('EMAIL_SUBJECT')[action]
             recipient=getattr(user, self.get_user_field('EMAIL'))
             msg = Message(subject=subject, sender=self.config_or_default('EMAIL_SENDER'), recipients=[recipient])
@@ -343,7 +363,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
             if self.config_or_default('EMAIL_HTML'):
                 template=self.config_or_default('EMAIL_HTML_TEMPLATE')[action]
                 msg.html=render_template(template, **context)
-            self._mail.send(msg)
+            mail.send(msg)
 
     #
     #   View Methods
@@ -378,13 +398,18 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         redirect_url = get_redirect_url(self.get_redirect_config(action))
         return redirect(redirect_url)
 
-    def reset_pass_view(self, reset_code):
+    def reset_pass_view(self, reset_code=None):
         #If valid code for forgotten password:
+        if not _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
+            expired, invalid, data = self.load_token(token=reset_code, serializer_name='RESET_PASS')
+
         return self.view('RESET_PASS')
         #else, ERROR!
 
     def confirm_email_view(self, confirm_code):
+        #If valid code for Confirmation
         pass
+        #else Error!
 
     #
     #   Blueprint Section
@@ -393,10 +418,13 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         blueprint.add_url_rule(rule=self.get_url_config('LOGIN'), endpoint='login', view_func=self.login_view, methods=['GET', 'POST'])
         blueprint.add_url_rule(rule=self.get_url_config('REGISTER'), endpoint='register', view_func=self.register_view, methods=['GET', 'POST'])
         blueprint.add_url_rule(rule=self.get_url_config('LOGOUT'), endpoint='logout', view_func=self.logout_view, methods=['GET', 'POST'])
-        blueprint.add_url_rule(rule=self.get_url_config('FORGOT_PASS'), endpoint='forgot_password', view_func=self.forgot_pass_view, methods=['GET', 'POST'])
-        blueprint.add_url_rule(rule=self.get_url_config('RESET_PASS'), endpoint='reset_password', view_func=self.reset_pass_view, methods=['GET', 'POST'])
         blueprint.add_url_rule(rule=self.get_url_config('CHANGE_PASS'), endpoint='change_password', view_func=self.change_pass_view, methods=['GET', 'POST'])
-        blueprint.add_url_rule(rule=self.get_url_config('CONFIRM_EMAIL'), endpoint='confirm_email', view_func=self.confirm_email_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url_config('FORGOT_PASS'), endpoint='forgot_password', view_func=self.forgot_pass_view, methods=['GET', 'POST'])
+        if _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
+            blueprint.add_url_rule(rule=self.get_url_config('RESET_PASS'), endpoint='reset_password', view_func=self.reset_pass_view, methods=['GET', 'POST'])
+        else:
+            blueprint.add_url_rule(rule=self.get_url_config('RESET_PASS')+'/<string:reset_code>', endpoint='reset_password', view_func=self.reset_pass_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url_config('CONFIRM_EMAIL')'/<string:confirm_code>', endpoint='confirm_email', view_func=self.confirm_email_view, methods=['GET', 'POST'])
 
     def initialize(self, app, blueprint, config, **kwargs):
         super().initialize(app, blueprint, config, **kwargs)
