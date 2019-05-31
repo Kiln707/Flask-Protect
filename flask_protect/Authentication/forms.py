@@ -62,7 +62,7 @@ class ResetPasswordForm(BaseForm):
     submit=SubmitField('login')
 
 class ChangePasswordForm(BaseForm):
-    currentpassword=PasswordField('current password',validators=[])
+    current_password=PasswordField('current password',validators=[])
     password=PasswordField('password',validators=[])
     confirm_password=PasswordField('confirm_password',validators=[])
     submit=SubmitField('login')
