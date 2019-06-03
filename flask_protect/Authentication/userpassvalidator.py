@@ -346,6 +346,10 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
     #
     #   Other Utilites
     #
+    def get_user_from_token_data(self, token):
+        user = self.get_user(data[0])
+        return user, data[1]
+
     def generate_code(self, user, action):
         password_hash = self.hash(user.password) if user.password else None
         data = [str(user.id), password_hash]
@@ -402,13 +406,15 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         #If valid code for forgotten password:
         if not _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
             expired, invalid, data = self.load_token(token=reset_code, serializer_name='RESET_PASS')
-
-        return self.view('RESET_PASS')
+            user, password = self.get_user_from_token_data(data)
+            if self.validate_user(user, password):
+                return self.view('RESET_PASS')
         #else, ERROR!
 
     def confirm_email_view(self, confirm_code):
         #If valid code for Confirmation
-        pass
+        expired, invalid, data = self.load_token(token=confirm_code, serializer_name='CONFIRM_EMAIL')
+        user, pass = self.get_user_from_token_data(data)
         #else Error!
 
     #
