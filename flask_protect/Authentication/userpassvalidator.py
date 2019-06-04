@@ -1,7 +1,7 @@
 from flask import request, render_template, redirect
 from .mixins import ValidatorMixin
 from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm
-from .utils import _protect, _validator, get_field, get_redirect_url
+from .utils import _protect, _validator, get_field
 from ..utils import safe_url, get_serializer, set_request_next, url_for_protect
 from ..Session import FLogin_Manager
 from passlib.context import CryptContext
@@ -129,7 +129,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
             'LOGOUT':'/logout',
             'REGISTER':'/register',
             'FORGOT_PASS':'/forgot_password',
-            'RESET_PASS': '/reset_password'
+            'RESET_PASS': '/reset_password',
             'CHANGE_PASS':'/change_password',
             'CONFIRM_EMAIL':'/confirm_account'
             },
@@ -143,7 +143,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         'FORMS':{
             'LOGIN': LoginForm,
             'REGISTER': RegisterIdentifierForm,
-            'FORGOT_PASS':,
+            'FORGOT_PASS':None,
             'RESET_PASS':reset_password,
             'CHANGE_PASS':None,
             'CONFIRM_EMAIL':None
@@ -329,33 +329,36 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
 
     def send_reset_password_instructions(self, user):
         context={'user':user, 'code':_validator.generate_code(user, 'FORGOT_PASS') }
-        _validator.send_mail('FORGOT_PASS', user, context=**context))
+        _validator.send_mail('FORGOT_PASS', user, context=context)
 
     def send_comfirm_email_instructions(self, user):
         context={'user':user, 'code':_validator.generate_code(user, 'CONFIRM_EMAIL') }
-        _validator.send_mail('CONFIRM_EMAIL', user, context=**context))
+        _validator.send_mail('CONFIRM_EMAIL', user, context=context)
 
     def send_password_reset_notification(self, user, content):
         context={'user':user, 'code':_validator.generate_code(user, 'PASSWORD_RESET') }
-        _validator.send_mail('PASSWORD_RESET', user, context=**context))
+        _validator.send_mail('PASSWORD_RESET', user, context=context)
 
     def send_password_change_notification(self, user, content):
         context={'user':user, 'code':_validator.generate_code(user, 'PASSWORD_CHANGE') }
-        _validator.send_mail('PASSWORD_CHANGE', user, context=**context))
+        _validator.send_mail('PASSWORD_CHANGE', user, context=context)
 
     #
     #   Other Utilites
     #
-    def get_user_from_token_data(self, token):
+    def get_user_from_token_data(self, token, invalid=False):
         user = self.get_user(data[0])
-        return user, data[1]
+        if not invalid and user:
+            if not self.validate_password(user.password, data[1]):
+                invalid=True
+        return user, invalid
 
     def generate_code(self, user, action):
         password_hash = self.hash(user.password) if user.password else None
         data = [str(user.id), password_hash]
         return self.generate_token(self, action, data)
 
-    def send_mail(self, action, user **context):
+    def send_mail(self, action, user, **context):
         if self.config_or_default('SEND_EMAIL'):
             mail=current_app.extensions.get('mail')
             subject=_validator.config_or_default('EMAIL_SUBJECT')[action]
@@ -403,18 +406,28 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         return redirect(redirect_url)
 
     def reset_pass_view(self, reset_code=None):
-        #If valid code for forgotten password:
+        #If not automatically redirecting
         if not _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
+            #If valid code for forgotten password:
             expired, invalid, data = self.load_token(token=reset_code, serializer_name='RESET_PASS')
-            user, password = self.get_user_from_token_data(data)
-            if self.validate_user(user, password):
-                return self.view('RESET_PASS')
-        #else, ERROR!
+            user, invalid = self.get_user_from_token_data(data, invalid)
+            if not user or invalid:
+                invalid = True
+                #Display Message that code is invalid
+            if expired:
+                #Resend instruction and try again
+                self.send_reset_password_instructions(user)
+            if invalid or expired:
+                return redirect(url_for('forgot_password'))
+            return self.view('RESET_PASS')
+        #Or if automatically redirecting
+        #elif we 'remember' if we are redirecting or not
+        return self.view('RESET_PASS')
 
     def confirm_email_view(self, confirm_code):
         #If valid code for Confirmation
         expired, invalid, data = self.load_token(token=confirm_code, serializer_name='CONFIRM_EMAIL')
-        user, pass = self.get_user_from_token_data(data)
+        user, invalid = self.get_user_from_token_data(data, invalid)
         #else Error!
 
     #
@@ -430,7 +443,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
             blueprint.add_url_rule(rule=self.get_url_config('RESET_PASS'), endpoint='reset_password', view_func=self.reset_pass_view, methods=['GET', 'POST'])
         else:
             blueprint.add_url_rule(rule=self.get_url_config('RESET_PASS')+'/<string:reset_code>', endpoint='reset_password', view_func=self.reset_pass_view, methods=['GET', 'POST'])
-        blueprint.add_url_rule(rule=self.get_url_config('CONFIRM_EMAIL')'/<string:confirm_code>', endpoint='confirm_email', view_func=self.confirm_email_view, methods=['GET', 'POST'])
+        blueprint.add_url_rule(rule=self.get_url_config('CONFIRM_EMAIL')+'/<string:confirm_code>', endpoint='confirm_email', view_func=self.confirm_email_view, methods=['GET', 'POST'])
 
     def initialize(self, app, blueprint, config, **kwargs):
         super().initialize(app, blueprint, config, **kwargs)

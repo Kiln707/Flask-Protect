@@ -73,7 +73,7 @@ class CryptContextValidatorMixin(ValidatorMixin):
         return self._cryptcontext.hash(password, scheme=scheme, category=category, **kwargs)
 
     def hash_password(self, password, scheme=None, category=None, **kwargs):
-        return self.hash(password, scheme=None, category=None, **kwargs))
+        return self.hash(password, scheme=None, category=None, **kwargs)
 
     def validate_password(self, password, hash, **kwargs):
         return self._cryptcontext.verify(password, hash, **kwargs)
@@ -152,7 +152,7 @@ class SerializingValidatorMixin(ValidatorMixin):
             self.new_serializer(app, name, salt)
 
 class FMail_Mixin():
-    def send_mail(self, action, user **context):
+    def send_mail(self, action, user, **context):
         mail=current_app.extensions.get('mail')
         if mail:
             subject=_validator.config_or_default('EMAIL_SUBJECT')[action]

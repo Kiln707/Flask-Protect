@@ -50,12 +50,12 @@ def _get_cookie_next(self):
     return None
 
 def _get_request_args_next(self):
-    if request.args and hasattr(request.args, 'next')
+    if request.args and hasattr(request.args, 'next'):
         return getattr(request.args, 'next')
     return None
 
 def _get_request_form_next(self):
-    if request.form and hasattr(request.form, 'next')
+    if request.form and hasattr(request.form, 'next'):
         return getattr(request.form, 'next')
     return None
 

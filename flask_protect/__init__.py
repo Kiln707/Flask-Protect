@@ -1,2 +1,2 @@
 from .core import Protect
-from .utils import url_for_protect, validate_redirect_url, _protect
+from .utils import url_for_protect, safe_url, _protect
