@@ -40,7 +40,9 @@ def create_app():
 
 def blueprint_endpoints():
     from flask_protect.utils import _protect
-    rules = [rule.endpoint for rule in app.url_map.iter_rules() if rule.endpoint.split('.')[0]==_protect.blueprint.name]
+    for rule in app.url_map.iter_rules():
+        print(type(rule.rule))
+    rules = [rule.endpoint for rule in app.url_map.iter_rules() if rule.endpoint.split('.')[0]==_protect.blueprint.name and '<' not in rule.rule]
     return rules
 
 def _ctx():

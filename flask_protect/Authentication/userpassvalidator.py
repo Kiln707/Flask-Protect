@@ -397,7 +397,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         return self.view('CHANGE_PASS')
 
     def logout_view(self):
-        action_func = self.get_action_config(action)
+        action_func = self.get_action_config('LOGOUT')
         if action_func:
             action_func()
         self.logout_user()
@@ -438,15 +438,15 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         blueprint.add_url_rule(rule=self.get_url_config('LOGOUT'), endpoint='logout', view_func=self.logout_view, methods=['GET', 'POST'])
         blueprint.add_url_rule(rule=self.get_url_config('CHANGE_PASS'), endpoint='change_password', view_func=self.change_pass_view, methods=['GET', 'POST'])
         blueprint.add_url_rule(rule=self.get_url_config('FORGOT_PASS'), endpoint='forgot_password', view_func=self.forgot_pass_view, methods=['GET', 'POST'])
-        if _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
+        if self.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
             blueprint.add_url_rule(rule=self.get_url_config('RESET_PASS'), endpoint='reset_password', view_func=self.reset_pass_view, methods=['GET', 'POST'])
         else:
             blueprint.add_url_rule(rule=self.get_url_config('RESET_PASS')+'/<string:reset_code>', endpoint='reset_password', view_func=self.reset_pass_view, methods=['GET', 'POST'])
-        blueprint.add_url_rule(rule=self.get_url_config('CONFIRM_EMAIL')+'/<string:confirm_code>', endpoint='confirm_email', view_func=self.confirm_email_view, methods=['GET', 'POST'])
+        #blueprint.add_url_rule(rule=self.get_url_config('CONFIRM_EMAIL')+'/<string:confirm_code>', endpoint='confirm_email', view_func=self.confirm_email_view, methods=['GET', 'POST'])
 
     def initialize(self, app, blueprint, config, **kwargs):
         super().initialize(app, blueprint, config, **kwargs)
-        if not current_app.extensions.get('mail'):
+        if not app.extensions.get('mail'):
             self._config['SEND_EMAIL']=False
 
     def get_defaults(self):
