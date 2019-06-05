@@ -30,9 +30,11 @@ def create_app():
     #All other setup
     from flask_protect import Protect
     from flask_protect.Authentication import UserPassValidator
+    from flask_protect.Session import FLogin_Manager
     datastore = TestDatastore()
-    validator = UserPassValidator(datastore, crypt_context=None, **{'LAYOUT_TEMPLATE':'hub.html'})
-    Protect(app=app, validator=validator, register_blueprint=True)
+    login_manager = FLogin_Manager(user_loader=datastore.get_user_by_id, app=app, user=TestDatastore.User)
+    validator = UserPassValidator(datastore, login_manager=login_manager, crypt_context=None, **{'LAYOUT_TEMPLATE':'hub.html'})
+    Protect(app=app, validator=validator,  register_blueprint=True)
     datastore.user.password = validator.hash_password('test')
     return app
 

@@ -1,5 +1,6 @@
 from flask import request
 from ..utils import safe_url, get_within_delta
+from passlib.context import CryptContext
 
 class ValidatorMixin():
     def __init__(self, datastore, login_manager, **kwargs):
@@ -148,8 +149,9 @@ class SerializingValidatorMixin(ValidatorMixin):
 
     def initialize(self, app, blueprint, config, **kwargs):
         super().initialize(app, blueprint, config, **kwargs)
+        print(self.config_or_default('SALT'))
         for name, salt in self._config['SALT'].items():
-            self.new_serializer(app, name, salt)
+            self.create_serializer(app, name, salt)
 
 class FMail_Mixin():
     def send_mail(self, action, user, **context):

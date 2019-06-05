@@ -1,10 +1,10 @@
 from flask import request, render_template, redirect
-from .mixins import ValidatorMixin
+from werkzeug import LocalProxy
+from .mixins import SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin
 from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm
 from .utils import _protect, _validator, get_field
-from ..utils import safe_url, get_serializer, set_request_next, url_for_protect
+from ..utils import safe_url, set_request_next, url_for_protect
 from ..Session import FLogin_Manager
-from passlib.context import CryptContext
 import os
 
 #
@@ -168,7 +168,6 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         },
         'SALT':{
             'FORGOT_PASS': 'forgot-pass-salt',
-
             'CONFIRM_SALT': 'confirm-salt',
             'RESET_SALT': 'reset-salt',
             'LOGIN_SALT': 'login-salt',

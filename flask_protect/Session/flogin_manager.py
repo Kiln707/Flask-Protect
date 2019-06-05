@@ -4,8 +4,8 @@ from flask_login import LoginManager
 from flask_login.signals import (user_loaded_from_cookie, user_loaded_from_header, user_loaded_from_request, user_unauthorized, user_needs_refresh, user_accessed, session_protected)
 
 class FLogin_Manager():
-    def __init__(self, user_loader, request_loader, app=None, user=None, anonymous_user=None):
-        super().__init__(app)
+    def __init__(self, user_loader=None, request_loader=None, app=None, user=None, anonymous_user=None):
+        super().__init__()
         self.User = user
         self.anonymous_user=anonymous_user
         self._login_manager=LoginManager(app=app)
@@ -13,7 +13,7 @@ class FLogin_Manager():
         _signals = Namespace()
         self.user_logged_in = _signals.signal('logged-in')
         self.user_logged_out = _signals.signal('logged-out')
-        self.user_login_confirmed = _signal.signal('login-confirmed')
+        self.user_login_confirmed = _signals.signal('login-confirmed')
         self.user_loaded_from_cookie = user_loaded_from_cookie
         self.user_loaded_from_header = user_loaded_from_header
         self.user_loaded_from_request = user_loaded_from_request
@@ -115,7 +115,8 @@ class FLogin_Manager():
         '''
         session['_fresh'] = True
         session['_id'] = self._login_manager._session_identifier_generator()
-        self.user_login_confirmed.send(current_app._get_current_object())   Signal confirm login
+        self.user_login_confirmed.send(current_app._get_current_object())
+        #Signal confirm login
 
     #
     #   Decorator Functions

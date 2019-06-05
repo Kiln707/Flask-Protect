@@ -11,7 +11,6 @@ class Protect(object):
         'URL_PREFIX':None,
         'SUBDOMAIN':None,
         'FLASH_MESSAGES': True,
-        'SALT':'protect-salt'
     }
 
     def __init__(self, app=None, validator=None, register_blueprint=True, **kwargs):
@@ -41,7 +40,7 @@ class Protect(object):
                    subdomain=self._config['SUBDOMAIN'],
                    template_folder='templates')
         if self._validator:
-            self._validator.initialize_blueprint(app, bp, config=self._config)
+            self._validator.initialize_blueprint(self.app, bp, config=self._config)
         self._blueprint=bp
         return bp
 
