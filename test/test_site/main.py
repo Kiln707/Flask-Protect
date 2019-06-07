@@ -4,7 +4,7 @@ def create_app():
     from flask_protect.Datastore.mixins import UserPassDatastoreMixin
     class TestDatastore(UserPassDatastoreMixin):
         class User():
-            def __init__(self):
+            def __init__(self, id, username, email_address, password):
                 self.id=1
                 self.username='test'
                 self.email_address='test@test.com'
@@ -12,6 +12,9 @@ def create_app():
         def __init__(self):
             self.user = TestDatastore.User()
             self.UserModel = TestDatastore.User
+        def create_user(self, username, email_address, password):
+            pass
+
         def get_user_by_email(self, email):
             if email == self.user.email_address:
                 return self.user
@@ -40,8 +43,6 @@ def create_app():
 
 def blueprint_endpoints():
     from flask_protect.utils import _protect
-    for rule in app.url_map.iter_rules():
-        print(type(rule.rule))
     rules = [rule.endpoint for rule in app.url_map.iter_rules() if rule.endpoint.split('.')[0]==_protect.blueprint.name and '<' not in rule.rule]
     return rules
 

@@ -33,7 +33,7 @@ class ValidatorMixin():
         self.routes(blueprint)
 
     def get_and_validate_form(self, form_key):
-        form = self.get_form(form_key)()
+        form = self.get_form_config(form_key)()
         return form, form.validate_on_submit()
 
     def get_url_config(self, key):

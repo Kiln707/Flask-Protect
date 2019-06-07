@@ -1,7 +1,7 @@
 from flask import request, render_template, redirect
 from werkzeug import LocalProxy
 from .mixins import SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin
-from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm
+from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm, ForgotPasswordForm, ResetPasswordForm, ChangePasswordForm, ConfirmEmailForm
 from .utils import _protect, _validator, get_field
 from ..utils import safe_url, set_request_next, url_for_protect
 from ..Session import FLogin_Manager
@@ -143,10 +143,10 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         'FORMS':{
             'LOGIN': LoginForm,
             'REGISTER': RegisterIdentifierForm,
-            'FORGOT_PASS':None,
-            'RESET_PASS':reset_password,
-            'CHANGE_PASS':None,
-            'CONFIRM_EMAIL':None
+            'FORGOT_PASS': ForgotPasswordForm,
+            'RESET_PASS': ResetPasswordForm,
+            'CHANGE_PASS': ChangePasswordForm,
+            'CONFIRM_EMAIL': ConfirmEmailForm
             },
         'REDIRECTS':{
             'LOGIN': '',
@@ -385,18 +385,32 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
 
     def login_view(self):
-        return self.view('LOGIN')
+        if self._login_manager.user_is_anonymous_user():
+            return self.view('LOGIN')
+        else:
+            redirect_url = get_redirect_url(self.get_redirect_config('LOGIN'))
+            return redirect(redirect_url)
 
     def register_view(self):
-        return self.view('REGISTER')
+        if self._login_manager.user_is_anonymous_user():
+            return self.view('REGISTER')
+        else:
+            redirect_url = get_redirect_url(self.get_redirect_config('LOGIN'))
+            return redirect(redirect_url)
 
     def forgot_pass_view(self):
-        return self.view('FORGOT_PASS')
+        if self._login_manager.user_is_anonymous_user():
+            return self.view('FORGOT_PASS')
+        else:
+            redirect_url = get_redirect_url(self.get_redirect_config('LOGIN'))
+            return redirect(redirect_url)
 
     def change_pass_view(self):
+        self._login_manager.user_is_authenticated()
         return self.view('CHANGE_PASS')
 
     def logout_view(self):
+        self._login_manager.user_is_authenticated()
         action_func = self.get_action_config('LOGOUT')
         if action_func:
             action_func()
@@ -405,6 +419,9 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         return redirect(redirect_url)
 
     def reset_pass_view(self, reset_code=None):
+        if not self._login_manager.user_is_anonymous_user():
+            redirect_url = get_redirect_url(self.get_redirect_config('LOGIN'))
+            return redirect(redirect_url)
         #If not automatically redirecting
         if not _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
             #If valid code for forgotten password:
@@ -424,6 +441,9 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         return self.view('RESET_PASS')
 
     def confirm_email_view(self, confirm_code):
+        if not self._login_manager.user_is_anonymous_user():
+            redirect_url = get_redirect_url(self.get_redirect_config('LOGIN'))
+            return redirect(redirect_url)
         #If valid code for Confirmation
         expired, invalid, data = self.load_token(token=confirm_code, serializer_name='CONFIRM_EMAIL')
         user, invalid = self.get_user_from_token_data(data, invalid)

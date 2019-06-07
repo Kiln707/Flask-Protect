@@ -1,10 +1,10 @@
 from flask import (_request_ctx_stack, current_app, request, session, url_for, has_request_context)
 from flask.signals import Namespace
-from flask_login import LoginManager
+from flask_login import LoginManager, login_required, current_user
 from flask_login.signals import (user_loaded_from_cookie, user_loaded_from_header, user_loaded_from_request, user_unauthorized, user_needs_refresh, user_accessed, session_protected)
 
 class FLogin_Manager():
-    def __init__(self, user_loader=None, request_loader=None, app=None, user=None, anonymous_user=None):
+    def __init__(self, user_loader=None, request_loader=None, login_view=None, app=None, user=None, anonymous_user=None):
         super().__init__()
         self.User = user
         self.anonymous_user=anonymous_user
@@ -21,6 +21,7 @@ class FLogin_Manager():
         self.user_needs_refresh = user_needs_refresh
         self.user_acessed = user_accessed
         self.session_protection = session_protected
+        self.EXEMPT_METHODS=[]
 
     #
     #   Utility methods
@@ -203,3 +204,38 @@ class FLogin_Manager():
 
     def needs_refresh_handler(self, callback):
         return self._login_manager.needs_refresh_handler(callback)
+
+    def user_is_anonymous_user(self):
+        return not current_user.is_authenticated
+
+    def user_is_authenticated(self, silent=False):
+        if request.method in self.EXEMPT_METHODS:
+            return True
+        elif current_app.config.get('LOGIN_DISABLED'):
+            return True
+        elif not current_user.is_authenticated:
+            if silent:
+                return False
+            return self.unauthorized()
+        return True
+
+    #
+    #   Decorators
+    #
+    def anonymous_user_reqired(self, f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if self.user_is_anonymous_user():
+                return redirect(self._post_login_redirect)
+            return f(*args, **kwargs)
+        return wrapper
+
+    def login_required(self, f):
+        return login_required(f)
+
+    #
+    #
+    #
+    def initialize(self, login_redirect, post_login_redirect):
+        self._login_redirect=login_redirect
+        self._post_login_redirect=post_login_redirect

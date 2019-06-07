@@ -21,7 +21,7 @@ class LoginForm(BaseForm):
     identifier=StringField('identifier', validators=[])
     password=PasswordField('password',validators=[])
     remember=BooleanField('remember_me')
-    submit=SubmitField('login')
+    submit=SubmitField('Login')
 
 class RegisterIdentifierForm(BaseForm):
     identifier=StringField('identifier', validators=[])
@@ -29,7 +29,7 @@ class RegisterIdentifierForm(BaseForm):
     confirm_email=StringField('confirm_email', validators=[])
     password=PasswordField('password',validators=[])
     confirm_password=PasswordField('confirm_password',validators=[])
-    submit=SubmitField('register')
+    submit=SubmitField('Register')
 
     def todict(self):
         def is_field_and_user_attr(member):
@@ -43,7 +43,7 @@ class RegisterEmailForm(BaseForm):
     confirm_email=StringField('confirm_email', validators=[])
     password=PasswordField('password',validators=[])
     confirm_password=PasswordField('confirm_password',validators=[])
-    submit=SubmitField('register')
+    submit=SubmitField('Register')
 
     def todict(self):
         def is_field_and_user_attr(member):
@@ -54,19 +54,19 @@ class RegisterEmailForm(BaseForm):
 
 class ForgotPasswordForm(BaseForm):
     email_address=StringField('email', validators=[])
-    submit=SubmitField('register')
+    submit=SubmitField('Send Instructions')
 
 class ResetPasswordForm(BaseForm):
     new_password=PasswordField('password',validators=[])
     confirm_password=PasswordField('confirm_password',validators=[])
-    submit=SubmitField('login')
+    submit=SubmitField('Reset PASSWORD')
 
 class ChangePasswordForm(BaseForm):
     current_password=PasswordField('current password',validators=[])
     password=PasswordField('password',validators=[])
     confirm_password=PasswordField('confirm_password',validators=[])
-    submit=SubmitField('login')
+    submit=SubmitField('Change Password')
 
 class ConfirmEmailForm(BaseForm):
     code=StringField('confirmation code', validators=[])
-    submit=SubmitField('login')
+    submit=SubmitField('Submit')
