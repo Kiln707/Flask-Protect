@@ -5,27 +5,31 @@ def create_app():
     class TestDatastore(UserPassDatastoreMixin):
         class User():
             def __init__(self, id, username, email_address, password):
-                self.id=1
-                self.username='test'
-                self.email_address='test@test.com'
-                self.password=None
+                self.id=id
+                self.username=username
+                self.email_address=email_address
+                self.password=password
         def __init__(self):
-            self.user = TestDatastore.User()
+            self.users = []
             self.UserModel = TestDatastore.User
         def create_user(self, username, email_address, password):
-            pass
-
+            user = self.UserModel(id=len(self.users), username=username, email_address=email_address, password=password)
+            self.users.append(user)
+            return user
         def get_user_by_email(self, email):
-            if email == self.user.email_address:
-                return self.user
+            for user in self.users:
+                if email == user.email_address:
+                    return user
             return None
         def get_user_by_identifier(self, identifier):
-            if identifier == self.user.username:
-                return self.user
+            for user in self.users:
+                if identifier == user.username:
+                    return user
             return None
         def get_user_by_id(self, id):
-            if id == self.user.id:
-                return self.user
+            for user in self.users:
+                if id == user.id:
+                    return user
             return None
 
     app = Flask(__name__)
@@ -38,7 +42,8 @@ def create_app():
     login_manager = FLogin_Manager(user_loader=datastore.get_user_by_id, app=app, user=TestDatastore.User)
     validator = UserPassValidator(datastore, login_manager=login_manager, crypt_context=None, **{'LAYOUT_TEMPLATE':'hub.html'})
     Protect(app=app, validator=validator,  register_blueprint=True)
-    datastore.user.password = validator.hash_password('test')
+    if not datastore.get_user_by_id(0):
+        datastore.create_user('admin','admin@admin.com', validator.hash_password('admin'))
     return app
 
 def blueprint_endpoints():

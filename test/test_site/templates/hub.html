@@ -4,5 +4,13 @@
     <a href="{{ url_for(route) }}">{{route}}</a>
   {% endfor %}
 </nav>
+</br>
+</br>
+{% if current_user.is_authenticated %}
+  Logged in as: {{ current_user.name }}
+{% else %}
+  Not Logged in.
+{% endif %}
+</br>
 {% block form %}
 {% endblock %}

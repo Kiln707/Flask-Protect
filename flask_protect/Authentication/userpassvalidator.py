@@ -16,16 +16,16 @@ def login(form):
     #If allowing both email and username, or using email
     user = _validator.get_user_from_form(form)
     #       VALIDATE User
-    if _validator.validate_user(user, get_field(form, 'password').data):
+    if _validator.validate_user(user, get_field(form, 'PASSWORD').data):
         _validator.login_user(user) #Valid, login user
         return True
     #Invalid username/email/identifier or password. Add error to field
     if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL'):
-        get_field(form, 'identifier').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
+        get_field(form, 'IDENTIFIER').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
     elif _validator.config_or_default('USE_EMAIL_AS_ID'):
-        get_field(form, 'email').errors.append(_validator.get_msg_config('BAD_EMAIL_PASS')[0])
+        get_field(form, 'EMAIL').errors.append(_validator.get_msg_config('BAD_EMAIL_PASS')[0])
     else:
-        get_field(form, 'identifier').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
+        get_field(form, 'IDENTIFIER').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
     return False
 
 def register(form):
@@ -255,12 +255,10 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
                 ('Please reauthenticate to access this page.'), 'info')
         },
         'FORM_FIELDS':{
-            'identifier':'Username',
-            'email':'Email Address',
-            'password':'Password',
-            'remember_me':'Remember Me',
-            'login':'Login',
-            'register':'Register'
+            'IDENTIFIER':'identifier',
+            'EMAIL':'email',
+            'PASSWORD':'password',
+            'REMEMBER_ME':'remember',
         },
         'USER_FIELDS':{
             'IDENTIFIER':'username',
@@ -287,10 +285,11 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
     def get_user_from_form(self, form):
         field=None
         if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or _validator.config_or_default('USE_EMAIL_AS_ID'):
-            field = get_field(form, 'email')
+            field = get_field(form, 'EMAIL')
         #If allowing both email and username and user not already found by email, OR not using email
         if ( _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not field ) or not _validator.config_or_default('USE_EMAIL_AS_ID'):
-            field = get_field(form, 'identifier')
+            field = get_field(form, 'IDENTIFIER')
+        print(field)
         return self.get_user(identifier=field.data)
 
     def validate_user(self, identifier, password, **kwargs):
@@ -305,7 +304,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
             if valid and new_hash:
                 self._datastore.update_password_hash(user, new_hash)
         else:
-            self.dummy_verify()
+            self.dummy_validate()
         return valid
 
     def change_user_password(self, identifier, current_password, new_password):

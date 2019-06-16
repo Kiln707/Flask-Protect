@@ -45,6 +45,9 @@ class ValidatorMixin():
     def get_form_config(self, key):
         return self.config_or_default('FORMS')[key]
 
+    def get_form_field_config(self, key):
+        return self.config_or_default('FORM_FIELDS')[key]
+
     def get_msg_config(self, key):
         return self.config_or_default('MSGS')[key]
 
