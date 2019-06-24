@@ -15,6 +15,7 @@ def login(form):
     #   GET User
     #If allowing both email and username, or using email
     user = _validator.get_user_from_form(form)
+    print(user)
     #       VALIDATE User
     if _validator.validate_user(user, get_field(form, 'PASSWORD').data):
         _validator.login_user(user) #Valid, login user
@@ -274,6 +275,8 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
     #   Validator Functions
     #
     def get_user(self, identifier):
+        if isinstance(identifier, self._datastore.UserModel):
+            return identifier
         user=None
         if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or _validator.config_or_default('USE_EMAIL_AS_ID'):
             user = _validator._datastore.get_user_by_email(identifier)
@@ -289,7 +292,6 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         #If allowing both email and username and user not already found by email, OR not using email
         if ( _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not field ) or not _validator.config_or_default('USE_EMAIL_AS_ID'):
             field = get_field(form, 'IDENTIFIER')
-        print(field)
         return self.get_user(identifier=field.data)
 
     def validate_user(self, identifier, password, **kwargs):

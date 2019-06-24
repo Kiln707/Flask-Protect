@@ -1,6 +1,7 @@
 from flask import (_request_ctx_stack, current_app, request, session, url_for, has_request_context)
 from flask.signals import Namespace
 from flask_login import LoginManager, login_required, current_user
+from flask_login import login_user as _login_user
 from flask_login.signals import (user_loaded_from_cookie, user_loaded_from_header, user_loaded_from_request, user_unauthorized, user_needs_refresh, user_accessed, session_protected)
 
 class FLogin_Manager():
@@ -42,51 +43,7 @@ class FLogin_Manager():
         return getattr(_request_ctx_stack.top, 'user', None)
 
     def login_user(self, user, remember=False, duration=None, force=False, fresh=True):
-        '''
-        Logs a user in. You should pass the actual user object to this. If the
-        user's `is_active` property is ``False``, they will not be logged in
-        unless `force` is ``True``.
-        This will return ``True`` if the log in attempt succeeds, and ``False`` if
-        it fails (i.e. because the user is inactive).
-        :param user: The user object to log in.
-        :type user: object
-        :param remember: Whether to remember the user after their session expires.
-            Defaults to ``False``.
-        :type remember: bool
-        :param duration: The amount of time before the remember cookie expires. If
-            ``None`` the value set in the settings is used. Defaults to ``None``.
-        :type duration: :class:`datetime.timedelta`
-        :param force: If the user is inactive, setting this to ``True`` will log
-            them in regardless. Defaults to ``False``.
-        :type force: bool
-        :param fresh: setting this to ``False`` will log in the user with a session
-            marked as not "fresh". Defaults to ``True``.
-        :type fresh: bool
-        '''
-        if not force and not user.is_active:
-            return False
-
-        user_id = getattr(user, self._login_manager.id_attribute)()
-        session['user_id'] = user_id
-        session['_fresh'] = fresh
-        session['_id'] = self._login_manager._session_identifier_generator()
-
-        if remember:
-            session['remember'] = 'set'
-            if duration is not None:
-                try:
-                    # equal to timedelta.total_seconds() but works with Python 2.6
-                    session['remember_seconds'] = (duration.microseconds +
-                                                   (duration.seconds +
-                                                    duration.days * 24 * 3600) *
-                                                   10**6) / 10.0**6
-                except AttributeError:
-                    raise Exception('duration must be a datetime.timedelta, '
-                                    'instead got: {0}'.format(duration))
-
-        self._login_manager._update_request_context_with_user(user)
-        self.user_logged_in.send(current_app._get_current_object(), user=self.get_user())
-        return True
+        return _login_user(user)
 
     def logout_user(self):
         '''

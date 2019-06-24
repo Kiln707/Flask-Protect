@@ -9,6 +9,11 @@ def create_app():
                 self.username=username
                 self.email_address=email_address
                 self.password=password
+                self.is_active=True
+                self.is_authenticated=True
+                self.is_anonymous=False
+            def get_id(self):
+                return self.id
         def __init__(self):
             self.users = []
             self.UserModel = TestDatastore.User
@@ -43,7 +48,7 @@ def create_app():
     validator = UserPassValidator(datastore, login_manager=login_manager, crypt_context=None, **{'LAYOUT_TEMPLATE':'hub.html'})
     Protect(app=app, validator=validator,  register_blueprint=True)
     if not datastore.get_user_by_id(0):
-        datastore.create_user('admin','admin@admin.com', validator.hash_password('admin'))
+        admin = datastore.create_user('admin','admin@admin.com', validator.hash_password('admin'))
     return app
 
 def blueprint_endpoints():
@@ -63,6 +68,8 @@ if __name__ == '__main__':
 
     @app.route('/')
     def root():
+        from flask_protect.utils import _validator
+        print(_validator.validate_user('admin', 'admin'))
         return render_template('hub.html')
 
     app.run()
