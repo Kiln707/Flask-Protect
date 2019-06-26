@@ -34,32 +34,32 @@ def safe_url(url):
 #
 #   Next Parameter methods
 #
-def _clear_cookie_next(self):
+def _clear_cookie_next():
     session.pop('request', None)
 
-def set_cookie_next(self, next_url):
+def set_cookie_next(next_url):
     session['next'] = next_url
-    after_this_request(self._clear_cookie_next)
+    after_this_request(_clear_cookie_next)
 
-def set_request_next(self, next_url):
+def set_request_next(next_url):
     setattr(request.args, 'next', next_url)
 
-def _get_cookie_next(self):
+def _get_cookie_next():
     if 'next' in session:
         return session['next']
     return None
 
-def _get_request_args_next(self):
+def _get_request_args_next():
     if request.args and hasattr(request.args, 'next'):
         return getattr(request.args, 'next')
     return None
 
-def _get_request_form_next(self):
+def _get_request_form_next():
     if request.form and hasattr(request.form, 'next'):
         return getattr(request.form, 'next')
     return None
 
-def get_redirect(self, default, additional_urls=[]):
+def get_redirect_url(default, additional_urls=[]):
     urls = [
         get_url(_get_cookie_next()),
         get_url(_get_request_args_next()),

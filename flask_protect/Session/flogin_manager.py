@@ -2,6 +2,7 @@ from flask import (_request_ctx_stack, current_app, request, session, url_for, h
 from flask.signals import Namespace
 from flask_login import LoginManager, login_required, current_user
 from flask_login import login_user as _login_user
+from flask_login import logout_user as _logout_user
 from flask_login.signals import (user_loaded_from_cookie, user_loaded_from_header, user_loaded_from_request, user_unauthorized, user_needs_refresh, user_accessed, session_protected)
 
 class FLogin_Manager():
@@ -46,25 +47,7 @@ class FLogin_Manager():
         return _login_user(user)
 
     def logout_user(self):
-        '''
-        Logs a user out. (You do not need to pass the actual user.) This will
-        also clean up the remember me cookie if it exists.
-        '''
-        user = self.get_user()
-        if 'user_id' in session:
-            session.pop('user_id')
-        if '_fresh' in session:
-            session.pop('_fresh')
-        if '_id' in session:
-            session.pop('_id')
-        cookie_name = current_app.config.get('REMEMBER_COOKIE_NAME', COOKIE_NAME)
-        if cookie_name in request.cookies:
-            session['remember'] = 'clear'
-            if 'remember_seconds' in session:
-                session.pop('remember_seconds')
-        self.user_logged_out.send(current_app._get_current_object(), user=user)
-        self._login_manager._update_request_context_with_user()
-        return True
+        return _logout_user()
 
     def confirm_login(self):
         '''

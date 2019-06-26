@@ -45,7 +45,14 @@ def create_app():
     from flask_protect.Session import FLogin_Manager
     datastore = TestDatastore()
     login_manager = FLogin_Manager(user_loader=datastore.get_user_by_id, app=app, user=TestDatastore.User)
-    validator = UserPassValidator(datastore, login_manager=login_manager, crypt_context=None, **{'LAYOUT_TEMPLATE':'hub.html'})
+    login_manager.user_loader(datastore.get_user_by_id)
+    validator = UserPassValidator(datastore, login_manager=login_manager, crypt_context=None, **{'LAYOUT_TEMPLATE':'hub.html', 'REDIRECT':{'LOGIN': '/',
+    'LOGOUT': '/',
+    'REGISTER': '/',
+    'FORGOT_PASS': '/',
+    'RESET_PASS': '/',
+    'CHANGE_PASS': '/',
+    'CONFIRM_EMAIL': '/'}})
     Protect(app=app, validator=validator,  register_blueprint=True)
     if not datastore.get_user_by_id(0):
         admin = datastore.create_user('admin','admin@admin.com', validator.hash_password('admin'))

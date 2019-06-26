@@ -2,8 +2,8 @@ from flask import request, render_template, redirect
 from werkzeug import LocalProxy
 from .mixins import SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin
 from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm, ForgotPasswordForm, ResetPasswordForm, ChangePasswordForm, ConfirmEmailForm
-from .utils import _protect, _validator, get_field
-from ..utils import safe_url, set_request_next, url_for_protect
+from .utils import _protect, _validator, _datastore, get_field
+from ..utils import safe_url, set_request_next, url_for_protect, get_redirect_url
 from ..Session import FLogin_Manager
 import os
 
@@ -15,7 +15,6 @@ def login(form):
     #   GET User
     #If allowing both email and username, or using email
     user = _validator.get_user_from_form(form)
-    print(user)
     #       VALIDATE User
     if _validator.validate_user(user, get_field(form, 'PASSWORD').data):
         _validator.login_user(user) #Valid, login user
@@ -31,7 +30,8 @@ def login(form):
 
 def register(form):
     user_data = form.todict()
-    user=_datastore.create_user(**userdata)
+    print(user_data)
+    user=_datastore.create_user(**user_data)
     #if confirm email address
     #generate code, and email to address
     return True
@@ -149,7 +149,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
             'CHANGE_PASS': ChangePasswordForm,
             'CONFIRM_EMAIL': ConfirmEmailForm
             },
-        'REDIRECTS':{
+        'REDIRECT':{
             'LOGIN': '',
             'LOGOUT': '',
             'REGISTER': '',
@@ -416,7 +416,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         if action_func:
             action_func()
         self.logout_user()
-        redirect_url = get_redirect_url(self.get_redirect_config(action))
+        redirect_url = get_redirect_url(self.get_redirect_config('LOGOUT'))
         return redirect(redirect_url)
 
     def reset_pass_view(self, reset_code=None):

@@ -3,6 +3,7 @@ from flask import Markup, current_app, flash, request
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, Field, HiddenField, PasswordField, \
 StringField, SubmitField, ValidationError, validators
+from .utils import _datastore
 
 class BaseForm(FlaskForm):
     def __init__(self, method='POST', action='', encoding='multipart/form-data', *args, **kwargs):
@@ -34,8 +35,8 @@ class RegisterIdentifierForm(BaseForm):
     def todict(self):
         def is_field_and_user_attr(member):
             return isinstance(member, Field) and \
-                hasattr(_datastore.user_model, member.name)
-        fields = inspect.getmembers(form, is_field_and_user_attr)
+                hasattr(_datastore.UserModel, member.label)
+        fields = inspect.getmembers(self, is_field_and_user_attr)
         return dict((key, value.data) for key, value in fields)
 
 class RegisterEmailForm(BaseForm):
