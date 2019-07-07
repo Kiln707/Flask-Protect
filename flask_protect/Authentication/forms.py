@@ -25,7 +25,7 @@ class LoginForm(BaseForm):
     submit=SubmitField('Login')
 
 class RegisterIdentifierForm(BaseForm):
-    identifier=StringField('identifier', validators=[])
+    username=StringField('username', validators=[])
     email_address=StringField('email', validators=[])
     confirm_email=StringField('confirm_email', validators=[])
     password=PasswordField('password',validators=[])
@@ -35,7 +35,7 @@ class RegisterIdentifierForm(BaseForm):
     def todict(self):
         def is_field_and_user_attr(member):
             return isinstance(member, Field) and \
-                hasattr(_datastore.UserModel, member.label)
+                hasattr(_datastore.UserModel, member.name)
         fields = inspect.getmembers(self, is_field_and_user_attr)
         return dict((key, value.data) for key, value in fields)
 
