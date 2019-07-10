@@ -1,6 +1,14 @@
 from flask import Flask, render_template
 from sqlalchemy import create_engine
 
+def create_test_database():
+    try:
+        conn = sqlite3.connect(':memory:')
+    except Error as e:
+        print(e)
+    finally:
+        conn.close()
+
 def create_app():
     from flask_protect.Datastore.mixins import UserPassDatastoreMixin
     class TestDatastore(UserPassDatastoreMixin):
@@ -58,14 +66,6 @@ def create_app():
     if not datastore.get_user_by_id(0):
         admin = datastore.create_user('admin','admin@admin.com', validator.hash_password('admin'))
     return app
-
-def create_test_database():
-    try:
-        conn = sqlite3.connect(':memory:')
-    except Error as e:
-        print(e)
-    finally:
-        conn.close()
 
 def blueprint_endpoints():
     from flask_protect.utils import _protect
