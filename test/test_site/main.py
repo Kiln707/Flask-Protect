@@ -4,10 +4,9 @@ from sqlalchemy import create_engine
 def create_test_database():
     try:
         conn = sqlite3.connect(':memory:')
+        return conn
     except Error as e:
         print(e)
-    finally:
-        conn.close()
 
 def create_app():
     from flask_protect.Datastore.mixins import UserPassDatastoreMixin

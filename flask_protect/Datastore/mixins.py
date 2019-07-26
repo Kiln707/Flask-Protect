@@ -1,7 +1,4 @@
 
-class DatastoreMixin():
-    pass
-
 class AuthenticationDatastoreMixin():
     def __init__(self, user_model):
         self.UserModel=user_model
