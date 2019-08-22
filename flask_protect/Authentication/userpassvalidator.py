@@ -1,8 +1,8 @@
-from flask import request, render_template, redirect
+from flask import request, render_template, redirect, current_app
 from werkzeug import LocalProxy
 from .mixins import SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin
 from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm, ForgotPasswordForm, ResetPasswordForm, ChangePasswordForm, ConfirmEmailForm
-from .utils import _protect, _validator, _datastore, get_field
+from .utils import _protect, _validator, get_field
 from ..utils import safe_url, set_request_next, url_for_protect, get_redirect_url
 from ..Session import FLogin_Manager
 import os
@@ -30,8 +30,7 @@ def login(form):
 
 def register(form):
     user_data = form.to_dict(form)
-    print(user_data)
-    user=_datastore.create_user(**user_data)
+    user=_validator.create_user(**user_data)
     #if confirm email address
     #generate code, and email to address
     return True
@@ -60,10 +59,10 @@ def reset_password(form):
 def change_password(form):
     #   Check that current password is correct for user
     #   take new password, hash and update user DB with new password
-    user = _validator.get_user_from_form(form=form)
+    user = _validator.current_user()
     if user:
-        current_password = get_field(form=form, key='current_password')
-        new_password = get_field(form=form, key='new_password')
+        current_password = get_field(form=form, key='CURRENT_PASSWORD').data
+        new_password = get_field(form=form, key='PASSWORD').data
         return _validator.change_user_password(identifier=user, current_password=current_password, new_password=new_password)
     return False
 
@@ -87,28 +86,28 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
             'CONFIRM_INSTRUCTIONS': 'Please confirm your email',
             'PASSWORD_RESET_NOTICE': 'Your password has been reset',
             'PASSWORD_CHANGE_NOTICE': 'Your password has been changed',
-            'RESET_INSTRUCTIONS': 'Password reset instructions',
+            'FORGOT_PASS': 'Password reset instructions',
         },
         'EMAIL_HTML_TEMPLATE':{
             'REGISTER': 'protect/email/welcome.html',
             'CONFIRM_INSTRUCTIONS': 'protect/email/confirm_email.html',
             'PASSWORD_RESET_NOTICE': 'protect/email/notice.html',
             'PASSWORD_CHANGE_NOTICE': 'protect/email/notice.html',
-            'RESET_INSTRUCTIONS': 'protect/email/reset_instructions.html',
+            'FORGOT_PASS': 'protect/email/reset_instructions.html',
         },
         'EMAIL_TXT_TEMPLATE':{
             'REGISTER': 'protect/email/welcome.txt',
             'CONFIRM_INSTRUCTIONS': 'protect/email/confirm_email.txt',
             'PASSWORD_RESET_NOTICE': 'protect/email/notice.txt',
             'PASSWORD_CHANGE_NOTICE': 'protect/email/notice.txt',
-            'RESET_INSTRUCTIONS': 'protect/email/reset_instructions.txt',
+            'FORGOT_PASS': 'protect/email/reset_instructions.txt',
         },
         'EMAIL_BODY':{
             'REGISTER': 'Welcome!',
             'CONFIRM_INSTRUCTIONS': 'Please confirm your email address!',
             'PASSWORD_RESET_NOTICE': 'Your password has recently been reset!',
             'PASSWORD_CHANGE_NOTICE': 'Your password has recently been changed',
-            'RESET_INSTRUCTIONS': 'To reset your password...',
+            'FORGOT_PASS': 'To reset your password...',
         },
         'CRYPT_SETTINGS':{
             'schemes':[
@@ -138,6 +137,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
             'LOGIN': 'protect/form_template.html',
             'REGISTER': 'protect/form_template.html',
             'FORGOT_PASS': 'protect/form_template.html',
+            'RESET_PASS': 'protect/form_template.html',
             'CHANGE_PASS': 'protect/form_template.html',
             'CONFIRM_EMAIL': 'protect/form_template.html',
         },
@@ -257,8 +257,9 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         },
         'FORM_FIELDS':{
             'IDENTIFIER':'identifier',
-            'EMAIL':'email',
+            'EMAIL':'email_address',
             'PASSWORD':'password',
+            'CURRENT_PASSWORD': 'current_password',
             'REMEMBER_ME':'remember',
         },
         'USER_FIELDS':{
@@ -274,17 +275,6 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
     #
     #   Validator Functions
     #
-    def get_user(self, identifier):
-        if isinstance(identifier, self._datastore.UserModel):
-            return identifier
-        user=None
-        if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or _validator.config_or_default('USE_EMAIL_AS_ID'):
-            user = _validator._datastore.get_user_by_email(identifier)
-        #If allowing both email and username and user not already found by email, OR not using email
-        if ( _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not _validator.config_or_default('USE_EMAIL_AS_ID'):
-            user = _validator._datastore.get_user_by_identifier(identifier)
-        return user
-
     def get_user_from_form(self, form):
         field=None
         if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or _validator.config_or_default('USE_EMAIL_AS_ID'):
@@ -293,6 +283,10 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         if ( _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not field ) or not _validator.config_or_default('USE_EMAIL_AS_ID'):
             field = get_field(form, 'IDENTIFIER')
         return self.get_user(identifier=field.data)
+
+    def create_user(self, **kwargs):
+        kwargs['password'] = self.hash_password(kwargs['password'])
+        return self._datastore.create_user(**kwargs)
 
     def validate_user(self, identifier, password, **kwargs):
         user = self.get_user(identifier)
@@ -318,14 +312,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
 
     def reset_user_password(self, identifier, new_password):
         user = self.get_user(identifier)
-        new_hash = self.hash_password(new_password)
-        self._datastore.update_password_hash(user, new_hash)
-
-    def login_user(self, user, remember=False, duration=None, force=False, fresh=True):
-        self._login_manager.login_user(user=user, remember=remember, duration=duration, force=force, fresh=fresh)
-
-    def logout_user(self):
-        self._login_manager.logout_user()
+        self._datastore.update_user_password(user, self.hash_password(new_password))
 
     def send_reset_password_instructions(self, user):
         context={'user':user, 'code':_validator.generate_code(user, 'FORGOT_PASS') }
@@ -356,9 +343,10 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
     def generate_code(self, user, action):
         password_hash = self.hash(user.password) if user.password else None
         data = [str(user.id), password_hash]
-        return self.generate_token(self, action, data)
+        return self.generate_token(action, data)
 
     def send_mail(self, action, user, **context):
+        return
         if self.config_or_default('SEND_EMAIL'):
             mail=current_app.extensions.get('mail')
             subject=_validator.config_or_default('EMAIL_SUBJECT')[action]

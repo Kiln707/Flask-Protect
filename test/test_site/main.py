@@ -16,7 +16,7 @@ def create_app():
                 self.id=id
                 self.username=username
                 self.email_address=email_address
-                self.password=validator.hash_password(password)
+                self.password=password
                 self.is_active=True
                 self.is_authenticated=True
                 self.is_anonymous=False
@@ -29,6 +29,8 @@ def create_app():
             user = self.UserModel(id=len(self.users), **kwargs)
             self.users.append(user)
             return user
+        def update_user_password(self, user, new_password):
+            user.password = new_password
         def get_user_by_email(self, email):
             for user in self.users:
                 if email == user.email_address:
@@ -54,7 +56,7 @@ def create_app():
     datastore = TestDatastore()
     login_manager = FLogin_Manager(user_loader=datastore.get_user_by_id, app=app, user=TestDatastore.User)
     login_manager.user_loader(datastore.get_user_by_id)
-    validator = UserPassValidator(datastore, login_manager=login_manager, crypt_context=None, **{'LAYOUT_TEMPLATE':'hub.html', 'REDIRECT':{'LOGIN': '/',
+    validator = UserPassValidator(datastore, login_manager=login_manager, crypt_context=None, **{'LAYOUT_TEMPLATE':'hub.html', 'FORGOT_PASS_DIRECT_TO_RESET_PASS':True, 'REDIRECT':{'LOGIN': '/',
     'LOGOUT': '/',
     'REGISTER': '/',
     'FORGOT_PASS': '/',
@@ -63,7 +65,7 @@ def create_app():
     'CONFIRM_EMAIL': '/'}})
     Protect(app=app, validator=validator,  register_blueprint=True)
     if not datastore.get_user_by_id(0):
-        admin = datastore.create_user(username='admin',email_address='admin@admin.com',password='admin')
+        admin = validator.create_user(username='admin',email_address='admin@admin.com',password='admin')
     return app
 
 def blueprint_endpoints():
@@ -84,7 +86,6 @@ if __name__ == '__main__':
     @app.route('/')
     def root():
         from flask_protect.utils import _validator
-        print(_validator.validate_user('admin', 'admin'))
         return render_template('hub.html')
 
     app.run()

@@ -60,7 +60,7 @@ class ForgotPasswordForm(BaseForm):
 class ResetPasswordForm(BaseForm):
     new_password=PasswordField('password',validators=[])
     confirm_password=PasswordField('confirm_password',validators=[])
-    submit=SubmitField('Reset PASSWORD')
+    submit=SubmitField('Reset Password')
 
 class ChangePasswordForm(BaseForm):
     current_password=PasswordField('current password',validators=[])

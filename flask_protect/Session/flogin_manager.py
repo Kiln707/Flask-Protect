@@ -43,6 +43,9 @@ class FLogin_Manager():
             self._login_manager._load_user()
         return getattr(_request_ctx_stack.top, 'user', None)
 
+    def current_user(self):
+        return current_user
+
     def login_user(self, user, remember=False, duration=None, force=False, fresh=True):
         return _login_user(user)
 

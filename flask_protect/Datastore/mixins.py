@@ -13,9 +13,6 @@ class AuthenticationDatastoreMixin():
             user = self.get_user_by_email(identifier)
         return user
 
-    def create_user(self, **kwargs):
-        raise NotImplementedError()
-
 class UserPassDatastoreMixin():
     def get_user_by_email(self, email):
         raise NotImplementedError()
