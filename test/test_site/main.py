@@ -12,11 +12,11 @@ def create_app():
     from flask_protect.Datastore.mixins import UserPassDatastoreMixin
     class TestDatastore(UserPassDatastoreMixin):
         class User():
-            def __init__(self, id, username, email_address, password):
+            def __init__(self, id, username, email_address, password, **kwargs):
                 self.id=id
                 self.username=username
                 self.email_address=email_address
-                self.password=password
+                self.password=validator.hash_password(password)
                 self.is_active=True
                 self.is_authenticated=True
                 self.is_anonymous=False
@@ -25,8 +25,8 @@ def create_app():
         def __init__(self):
             self.users = []
             self.UserModel = TestDatastore.User
-        def create_user(self, username, email_address, password):
-            user = self.UserModel(id=len(self.users), username=username, email_address=email_address, password=password)
+        def create_user(self, **kwargs):
+            user = self.UserModel(id=len(self.users), **kwargs)
             self.users.append(user)
             return user
         def get_user_by_email(self, email):
@@ -63,7 +63,7 @@ def create_app():
     'CONFIRM_EMAIL': '/'}})
     Protect(app=app, validator=validator,  register_blueprint=True)
     if not datastore.get_user_by_id(0):
-        admin = datastore.create_user('admin','admin@admin.com', validator.hash_password('admin'))
+        admin = datastore.create_user(username='admin',email_address='admin@admin.com',password='admin')
     return app
 
 def blueprint_endpoints():

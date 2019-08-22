@@ -29,7 +29,7 @@ def login(form):
     return False
 
 def register(form):
-    user_data = form.todict()
+    user_data = form.to_dict(form)
     print(user_data)
     user=_datastore.create_user(**user_data)
     #if confirm email address

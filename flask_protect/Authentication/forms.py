@@ -32,12 +32,12 @@ class RegisterIdentifierForm(BaseForm):
     confirm_password=PasswordField('confirm_password',validators=[])
     submit=SubmitField('Register')
 
-    def todict(self):
-        def is_field_and_user_attr(member):
-            return isinstance(member, Field) and \
-                hasattr(_datastore.UserModel, member.name)
-        fields = inspect.getmembers(self, is_field_and_user_attr)
-        return dict((key, value.data) for key, value in fields)
+    def to_dict(self, form):
+        fields={}
+        for member in form:
+            if isinstance(member, Field):
+                fields[member.name] = member
+        return dict((key, value.data) for key, value in fields.items())
 
 class RegisterEmailForm(BaseForm):
     email_address=StringField('email', validators=[])
@@ -46,11 +46,11 @@ class RegisterEmailForm(BaseForm):
     confirm_password=PasswordField('confirm_password',validators=[])
     submit=SubmitField('Register')
 
-    def todict(self):
-        def is_field_and_user_attr(member):
-            return isinstance(member, Field) and \
-                hasattr(_datastore.user_model, member.name)
-        fields = inspect.getmembers(form, is_field_and_user_attr)
+    def to_dict(self, form):
+        fields={}
+        for member in form:
+            if isinstance(member, Field):
+                fields[member.name] = member
         return dict((key, value.data) for key, value in fields)
 
 class ForgotPasswordForm(BaseForm):
