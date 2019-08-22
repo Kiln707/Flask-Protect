@@ -40,9 +40,7 @@ def forgot_password(form):
     user = _validator.get_user_from_form(form=form)
     # generate code to allow reset password
     if user:
-        if _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
-            set_request_next(url_for_protect('reset_password'))
-        else:
+        if not _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS') and _validator.config_or_default('SEND_EMAIL'):
             # Send email, with link/code to reset password, redirect
             _validator.send_reset_password_instructions(user)
         return True
@@ -69,7 +67,6 @@ def change_password(form):
 #
 #
 #
-
 class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin):
     __DEFAULT_CONFIG={
         'ALLOW_BOTH_IDENTIFIER_AND_EMAIL':True, #Can a identifier or email address be used for validating?
@@ -271,7 +268,6 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
 
     def __init__(self, datastore, login_manager, crypt_context=None, **kwargs):
         super().__init__(datastore=datastore, login_manager=login_manager, crypt_context=crypt_context, **kwargs)
-
     #
     #   Validator Functions
     #
@@ -329,7 +325,6 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
     def send_password_change_notification(self, user, content):
         context={'user':user, 'code':_validator.generate_code(user, 'PASSWORD_CHANGE') }
         _validator.send_mail('PASSWORD_CHANGE', user, context=context)
-
     #
     #   Other Utilites
     #
@@ -346,7 +341,6 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         return self.generate_token(action, data)
 
     def send_mail(self, action, user, **context):
-        return
         if self.config_or_default('SEND_EMAIL'):
             mail=current_app.extensions.get('mail')
             subject=_validator.config_or_default('EMAIL_SUBJECT')[action]
@@ -359,7 +353,6 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
                 template=self.config_or_default('EMAIL_HTML_TEMPLATE')[action]
                 msg.html=render_template(template, **context)
             mail.send(msg)
-
     #
     #   View Methods
     #
@@ -389,7 +382,8 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
 
     def forgot_pass_view(self):
         if self._login_manager.user_is_anonymous_user():
-            return self.view('FORGOT_PASS')
+            if self.view('FORGOT_PASS') and self.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
+                return redirect(url_for_protect('reset_password'))
         else:
             redirect_url = get_redirect_url(self.get_redirect_config('LOGIN'))
             return redirect(redirect_url)

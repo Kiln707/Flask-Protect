@@ -11,9 +11,7 @@ _validator = LocalProxy(lambda: _protect._validator)
 _datastore = LocalProxy(lambda: _validator._datastore)
 
 def url_for_protect(endpoint, **kwargs):
-    #Return a URL for Protect blueprint
-    endpoint = '%s.%s' % (_protect.config('BLUEPRINT_NAME'), endpoint)
-    return url_for(endpoint, **values)
+    return _protect.url_for_protect(endpoint, **kwargs)
 
 def get_url(endpoint_or_url):
     try:
