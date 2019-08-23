@@ -42,6 +42,9 @@ def set_cookie_next(next_url):
 def set_request_next(next_url):
     setattr(request.args, 'next', next_url)
 
+def get_request_form():
+    return request.form
+
 def _get_cookie_next():
     if 'next' in session:
         return session['next']

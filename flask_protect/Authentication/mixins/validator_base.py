@@ -1,3 +1,5 @@
+from flask import request
+
 class ValidatorMixin():
     def __init__(self, datastore, login_manager, **kwargs):
         self._kwargs = kwargs
@@ -71,9 +73,12 @@ class ValidatorMixin():
         self.initialize(app, blueprint, config, **kwargs)
         self.routes(blueprint)
 
-    def get_and_validate_form(self, form_key):
-        form = self.get_form_config(form_key)()
-        return form, form.validate_on_submit()
+    def get_and_validate_form(self, form_key, **kwargs):
+        form = self.get_form_config(form_key)(**kwargs)
+        print(request.method)
+        if request.method == 'POST':
+            return form, form.validate_on_submit()
+        return form, False
 
     def get_url_config(self, key):
         return self.config_or_default('URLS')[key]
