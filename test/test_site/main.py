@@ -42,6 +42,7 @@ def create_app():
                     return user
             return None
         def get_user_by_id(self, id):
+            print(id, self.users)
             for user in self.users:
                 if id == user.id:
                     return user

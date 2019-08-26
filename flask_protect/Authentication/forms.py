@@ -58,7 +58,8 @@ class ForgotPasswordForm(BaseForm):
     submit=SubmitField('Send Instructions')
 
 class ResetPasswordForm(BaseForm):
-    new_password=PasswordField('password',validators=[])
+    user_id=HiddenField("user")
+    password=PasswordField('password',validators=[])
     confirm_password=PasswordField('confirm_password',validators=[])
     submit=SubmitField('Reset Password')
 

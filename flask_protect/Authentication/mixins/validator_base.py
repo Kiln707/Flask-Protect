@@ -46,7 +46,9 @@ class ValidatorMixin():
         if isinstance(identifier, self._datastore.UserModel):
             return identifier
         user=None
-        if self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or self.config_or_default('USE_EMAIL_AS_ID'):
+        if isinstance(identifier, int):
+            user = self._datastore.get_user_by_id(identifier)
+        if ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or self.config_or_default('USE_EMAIL_AS_ID'):
             user = self._datastore.get_user_by_email(identifier)
         #If allowing both email and username and user not already found by email, OR not using email
         if ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not self.config_or_default('USE_EMAIL_AS_ID'):
@@ -75,7 +77,6 @@ class ValidatorMixin():
 
     def get_and_validate_form(self, form_key, **kwargs):
         form = self.get_form_config(form_key)(**kwargs)
-        print(request.method)
         if request.method == 'POST':
             return form, form.validate_on_submit()
         return form, False

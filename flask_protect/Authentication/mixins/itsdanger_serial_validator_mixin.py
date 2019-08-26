@@ -32,7 +32,8 @@ class SerializingValidatorMixin(ValidatorMixin):
 
     def load_token(self, token, serializer_name, max_age=None):
         serializer = self.get_serializer(serializer_name)
-        max_age = get_within_delta(max_age)
+        if max_age:
+            max_age = get_within_delta(max_age) 
         data = None
         expired, invalid = False, False
         try:
