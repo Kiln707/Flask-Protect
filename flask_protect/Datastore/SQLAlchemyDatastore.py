@@ -1,6 +1,6 @@
-from .mixin.datastore import datastore
+from .mixin.datastore import DatastoreMixin
 
-class SQLAlchemyDatastore(Datastore):
+class SQLAlchemyDatastore(DatastoreMixin):
     def commit(self):
         self.db.session.commit()
 

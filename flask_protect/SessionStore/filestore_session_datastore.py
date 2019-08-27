@@ -1,3 +1,5 @@
+from .mixins import SessionDatastoreMixin
+
 class FilestoreSessionDatastore(SessionDatastoreMixin):
     def __init__(self, path, secret):
         self.path=path

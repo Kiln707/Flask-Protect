@@ -13,7 +13,7 @@ class SessionCache(SessionDatastoreMixin):
         self._cache = OrderedDict()
 
     def _normalize(self):
-        print "Session cache size: %s" % len(self._cache)
+        print("Session cache size: %s" % len(self._cache))
         if len(self._cache) > self.num_to_store:
             while len(self._cache) > (self.num_to_store * 0.8):  # flush 20% of the cache
                 self._cache.popitem(False)
