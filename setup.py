@@ -14,6 +14,11 @@ install_requires = [
     'flask_login',
 ]
 
+setup_requires = [
+    'pytest-runner'
+]
+
+
 packages = find_packages()
 
 setup(
