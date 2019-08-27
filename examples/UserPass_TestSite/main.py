@@ -42,14 +42,13 @@ def create_app():
                     return user
             return None
         def get_user_by_id(self, id):
-            print(id, self.users)
             for user in self.users:
                 if id == user.id:
                     return user
             return None
 
     app = Flask(__name__)
-    app.config['SECRET_KEY']='meh'
+    app.config['SECRET_KEY']='change-me'
     #All other setup
     from flask_protect import Protect
     from flask_protect.Authentication import UserPassValidator

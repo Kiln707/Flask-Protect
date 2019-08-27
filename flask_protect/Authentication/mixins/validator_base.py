@@ -48,10 +48,10 @@ class ValidatorMixin():
         user=None
         if isinstance(identifier, int):
             user = self._datastore.get_user_by_id(identifier)
-        if ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or self.config_or_default('USE_EMAIL_AS_ID'):
+        if not user and ( ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or self.config_or_default('USE_EMAIL_AS_ID') ):
             user = self._datastore.get_user_by_email(identifier)
         #If allowing both email and username and user not already found by email, OR not using email
-        if ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not self.config_or_default('USE_EMAIL_AS_ID'):
+        if not user and ( ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not self.config_or_default('USE_EMAIL_AS_ID') ):
             user = self._datastore.get_user_by_identifier(identifier)
         return user
 

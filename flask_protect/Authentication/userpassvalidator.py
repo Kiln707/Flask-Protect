@@ -341,7 +341,6 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
     #   Other Utilites
     #
     def get_user_from_token_data(self, token, invalid=False):
-        print(token)
         user = self.get_user(int(token[0]))
         if not invalid and user:
             if not self.validate_password(user.password, token[1]):
@@ -440,7 +439,6 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
             #Resend instruction and try again
             self.send_reset_password_instructions(user)
         if invalid or expired:
-            print(user, invalid, expired)
             return redirect(url_for_protect('forgot_password'))
         return self.view('RESET_PASS', **{'user_id': user.id})
 
