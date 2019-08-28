@@ -9,6 +9,10 @@ def test_Setup_with_no_flaskapp():
     protect = Protect()
 
 #
+#   Without Flask
+#
+
+#
 #   Configuration Tests
 #
 
@@ -22,7 +26,7 @@ def test_configuration_with_no_flaskapp():
         'FLASH_MESSAGES': True,
     }
     protect = Protect()
-    for key, value in defaults:
+    for key, value in defaults.items():
         assert protect._config[key] == value
 
 def test_custom_configuration_with_no_flaskapp():
@@ -50,21 +54,9 @@ def test_custom_configuration_missing_values_with_no_flaskapp():
     protect = Protect(**new_config)
     for key, value in new_config.items():
         if key == 'BLUEPRINT_NAME':
-                assert protect._config[key] != value
-        assert protect._config[key] == value
-
-def test_custom_configuration_deleted_values_with_no_flaskapp():
-    from flask_protect import Protect
-    new_config={
-        #Basic Functionality
-        'BLUEPRINT_NAME': None,
-        'URL_PREFIX':None,
-        'SUBDOMAIN':None,
-        'FLASH_MESSAGES': True,
-    }
-    protect = Protect(**new_config)
-    protect.config.pop('BLUEPRINT_NAME')
-    assert 'BLUEPRINT_NAME' not in protect._config
+            assert protect.get_config(key) != value
+        else:
+            assert protect.get_config(key) == value
 
 def test_get_config_with_no_flaskapp():
     from flask_protect import Protect
@@ -77,9 +69,9 @@ def test_get_config_with_no_flaskapp():
     }
     protect = Protect()
     for key, value in defaults.items():
-        assert protect.get_config[key] == value
+        assert protect.get_config(key) == value
 
-def test_get_config_with_incomplete_configwith_no_flaskapp():
+def test_get_config_with_incomplete_config_with_no_flaskapp():
     from flask_protect import Protect
     defaults={
         #Basic Functionality
@@ -89,5 +81,7 @@ def test_get_config_with_incomplete_configwith_no_flaskapp():
         'FLASH_MESSAGES': True,
     }
     protect = Protect()
+    protect._config.pop('BLUEPRINT_NAME')
+    assert 'BLUEPRINT_NAME' not in protect._config
     for key, value in defaults.items():
-        assert protect.get_config[key] == value
+        assert protect.get_config(key) == value

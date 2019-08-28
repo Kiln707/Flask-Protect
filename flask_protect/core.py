@@ -32,12 +32,12 @@ class Protect(object):
         self.app = app
         self.set_defaults()
         if self._register_blueprint:
-            self.blueprint = self.create_blueprint()
+            self.blueprint = self._create_blueprint()
             app.register_blueprint(self.blueprint)
             app.context_processor(self._ctx)
         app.extensions['protect']=self
 
-    def create_blueprint(self):
+    def _create_blueprint(self):
         bp = Blueprint(self._config['BLUEPRINT_NAME'], __name__,
                    url_prefix=self._config['URL_PREFIX'],
                    subdomain=self._config['SUBDOMAIN'],
@@ -94,5 +94,5 @@ class Protect(object):
 
     def get_config(self, key):
         if self.app:
-            return self.app.config['PROTECT_'+key] or self._config[key] or self.__DEFAULT_CORE_CONFIG[key]
-        return self._config[key] or self.__DEFAULT_CORE_CONFIG[key]
+            return self.app.config.get('PROTECT_'+key, self._config.get(key, self.__DEFAULT_CORE_CONFIG[key])) or self._config.get(key, self.__DEFAULT_CORE_CONFIG[key]) or self.__DEFAULT_CORE_CONFIG[key]
+        return self._config.get(key, self.__DEFAULT_CORE_CONFIG[key]) or self.__DEFAULT_CORE_CONFIG[key]
