@@ -68,12 +68,15 @@ class ValidatorMixin():
     #
     # validator actions
     #
-    def initialize(self, app, blueprint, config, **kwargs):
-        self._config = config
+    def initialize(self, app, blueprint, **kwargs):
+        pass
 
-    def initialize_blueprint(self, app, blueprint, config, **kwargs):
-        self.initialize(app, blueprint, config, **kwargs)
+    def initialize_blueprint(self, app, blueprint, **kwargs):
+        self.initialize(app, blueprint, **kwargs)
         self.routes(blueprint)
+
+    def initialize_config(self, config):
+        self._config = config
 
     def get_and_validate_form(self, form_key, **kwargs):
         form = self.get_form_config(form_key)(**kwargs)

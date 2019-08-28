@@ -33,7 +33,7 @@ class SerializingValidatorMixin(ValidatorMixin):
     def load_token(self, token, serializer_name, max_age=None):
         serializer = self.get_serializer(serializer_name)
         if max_age:
-            max_age = get_within_delta(max_age) 
+            max_age = get_within_delta(max_age)
         data = None
         expired, invalid = False, False
         try:
@@ -46,7 +46,9 @@ class SerializingValidatorMixin(ValidatorMixin):
         expired = expired and (data is not None)
         return expired, invalid, data
 
-    def initialize(self, app, blueprint, config, **kwargs):
-        super().initialize(app, blueprint, config, **kwargs)
-        for name, salt in self._config['SALT'].items():
+    def initialize(self, app, blueprint, **kwargs):
+        super().initialize(app, blueprint, **kwargs)
+
+    def initialize_config(self, config):
+        for name, salt in config['SALT'].items():
             self.create_serializer(app, name, salt)

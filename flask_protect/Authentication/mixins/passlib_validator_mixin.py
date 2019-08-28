@@ -37,7 +37,7 @@ class CryptContextValidatorMixin(ValidatorMixin):
         elif isinstance(crypt_context, CryptContext):
             self._cryptcontext=crypt_context
 
-    def initialize(self, app, blueprint, config, **kwargs):
-        super().initialize(app, blueprint, config, **kwargs)
+    def initialize(self, app, blueprint, **kwargs):
+        super().initialize(app, blueprint, **kwargs)
         if not self._cryptcontext:
             self._cryptcontext = CryptContext(**self.config_or_default('CRYPT_SETTINGS'))

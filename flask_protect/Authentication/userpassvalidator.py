@@ -463,8 +463,8 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         blueprint.add_url_rule(rule=self.get_url_config('RESET_PASS')+'/<string:reset_code>', endpoint='reset_password', view_func=self.reset_pass_view, methods=['GET', 'POST'])
         #blueprint.add_url_rule(rule=self.get_url_config('CONFIRM_EMAIL')+'/<string:confirm_code>', endpoint='confirm_email', view_func=self.confirm_email_view, methods=['GET', 'POST'])
 
-    def initialize(self, app, blueprint, config, **kwargs):
-        super().initialize(app, blueprint, config, **kwargs)
+    def initialize(self, app, blueprint, **kwargs):
+        super().initialize(app, blueprint, **kwargs)
         if not app.extensions.get('mail'):
             self._config['SEND_EMAIL']=False
 
