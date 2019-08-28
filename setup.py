@@ -1,5 +1,15 @@
 from setuptools import find_packages, setup
 
+try:
+   from setupext_janitor import janitor
+   CleanCommand = janitor.CleanCommand
+except ImportError:
+   CleanCommand = None
+
+cmd_classes = {}
+if CleanCommand is not None:
+   cmd_classes['clean'] = CleanCommand
+
 tests_require = [
     'pytest',
     'pytest-cov',
@@ -39,6 +49,7 @@ setup(
     install_requires=install_requires,
 #    setup_requires=setup_requires,
     tests_require=tests_require,
+    cmdclass=cmd_classes,
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
