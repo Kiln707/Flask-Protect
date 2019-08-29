@@ -1,3 +1,4 @@
+from collections import ChainMap
 from flask import request
 
 class ValidatorMixin():
@@ -13,6 +14,9 @@ class ValidatorMixin():
     #
     # User Functions
     #
+    def get_user(self, identifier):
+        raise NotImplementedError()
+
     def create_user(self, **kwargs):
         raise NotImplementedError()
 
@@ -30,11 +34,11 @@ class ValidatorMixin():
     #
     # validator actions
     #
-    def get_defaults(self):
-        raise NotImplementedError()
-
     def routes(self, blueprint):
         raise NotImplementedError()
+
+    def initialize(self, app, blueprint, **kwargs):
+        pass
 
     ###########################################################################################
     #   Does not require override
@@ -42,19 +46,6 @@ class ValidatorMixin():
     #
     # User Functions
     #
-    def get_user(self, identifier):
-        if isinstance(identifier, self._datastore.UserModel):
-            return identifier
-        user=None
-        if isinstance(identifier, int):
-            user = self._datastore.get_user_by_id(identifier)
-        if not user and ( ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or self.config_or_default('USE_EMAIL_AS_ID') ):
-            user = self._datastore.get_user_by_email(identifier)
-        #If allowing both email and username and user not already found by email, OR not using email
-        if not user and ( ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not self.config_or_default('USE_EMAIL_AS_ID') ):
-            user = self._datastore.get_user_by_identifier(identifier)
-        return user
-
     def login_user(self, user, remember=False, duration=None, force=False, fresh=True):
         self._login_manager.login_user(user=user, remember=remember, duration=duration, force=force, fresh=fresh)
 
@@ -65,12 +56,16 @@ class ValidatorMixin():
         user = self._login_manager.current_user()
         return self._datastore.get_user_by_id(user.id)
 
+    def get_field(form, key):
+        if hasattr(form, self.get_form_field_config(key)):
+            return getattr(form, self.get_form_field_config(key))
+        elif hasattr(form, key):
+            return getattr(form, key)
+        return None
+
     #
     # validator actions
     #
-    def initialize(self, app, blueprint, **kwargs):
-        pass
-
     def initialize_blueprint(self, app, blueprint, **kwargs):
         self.initialize(app, blueprint, **kwargs)
         self.routes(blueprint)
@@ -83,6 +78,12 @@ class ValidatorMixin():
         if request.method == 'POST':
             return form, form.validate_on_submit()
         return form, False
+
+    def get_defaults(self):
+        defaults = {}
+        if type(self) is not ValidatorMixin:
+            defaults = super().get_defaults().copy()
+        return dict(ChainMap(self.__DEFAULT_CONFIG, defaults))
 
     def get_url_config(self, key):
         return self.config_or_default('URLS')[key]

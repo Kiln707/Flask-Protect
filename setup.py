@@ -1,14 +1,14 @@
 from setuptools import find_packages, setup
 
 try:
-   from setupext_janitor import janitor
-   CleanCommand = janitor.CleanCommand
+    from setupext_janitor import janitor
+    CleanCommand = janitor.CleanCommand
 except ImportError:
-   CleanCommand = None
+    CleanCommand = None
 
 cmd_classes = {}
 if CleanCommand is not None:
-   cmd_classes['clean'] = CleanCommand
+    cmd_classes['clean'] = CleanCommand
 
 tests_require = [
     'pytest',
@@ -45,9 +45,9 @@ setup(
     zip_safe=False,
     include_package_data=True,
     platforms='any',
-#    extras_require=extras_require,
+    # extras_require=extras_require,
     install_requires=install_requires,
-#    setup_requires=setup_requires,
+    setup_requires=setup_requires,
     tests_require=tests_require,
     cmdclass=cmd_classes,
     classifiers=[

@@ -4,9 +4,10 @@ from werkzeug.local import LocalProxy
 
 from .utils import safe_url
 
+
 class Protect(object):
     __DEFAULT_CORE_CONFIG = {
-        #Basic Functionality
+        # Basic Functionality
         'BLUEPRINT_NAME': 'protect',
         'URL_PREFIX':None,
         'SUBDOMAIN':None,
@@ -14,45 +15,49 @@ class Protect(object):
     }
 
     def __init__(self, app=None, validator=None, register_blueprint=True, **kwargs):
-        self.app=None
+        self.app = None
         self._validator = validator
         self._register_blueprint = register_blueprint
         self._kwargs = kwargs
-        self._config={}
+        self._config = {}
         if app:
             self.init_app(app)
         else:
-            self.set_defaults()
-        self.set_config()
-
-    def _ctx(self):
-        return dict(url_for_protect=self.url_for_protect, protect=LocalProxy(lambda: current_app.extensions['protect']))
+            self._set_core_defaults()
+        self._set_core_config()
 
     def init_app(self, app):
         self.app = app
-        self.set_defaults()
+        self._set_core_defaults()
         if self._register_blueprint:
             self.blueprint = self._create_blueprint()
             app.register_blueprint(self.blueprint)
             app.context_processor(self._ctx)
-        app.extensions['protect']=self
+        app.extensions['protect'] = self
 
     def _create_blueprint(self):
-        bp = Blueprint(self._config['BLUEPRINT_NAME'], __name__,
-                   url_prefix=self._config['URL_PREFIX'],
-                   subdomain=self._config['SUBDOMAIN'],
-                   template_folder='templates')
+        bp = Blueprint(self._config['BLUEPRINT_NAME'],
+                    __name__,
+                    url_prefix=self._config['URL_PREFIX'],
+                    subdomain=self._config['SUBDOMAIN'],
+                    template_folder='templates')
         if self._validator:
             self._validator.initialize_blueprint(self.app, bp)
-        self._blueprint=bp
+        self._blueprint = bp
         return bp
 
     #
     #   Utility function
     #
+    def get_config(self, key):
+        if self.app:
+            return self.app.config.get('PROTECT_' + key,
+                self._config.get(key, self.__DEFAULT_CORE_CONFIG[key])) or self._config.get(key,
+                self.__DEFAULT_CORE_CONFIG[key]) or self.__DEFAULT_CORE_CONFIG[key]
+        return self._config.get(key, self.__DEFAULT_CORE_CONFIG[key]) or self.__DEFAULT_CORE_CONFIG[key]
 
     def url_for_protect(self, endpoint, **kwargs):
-        #Return a URL for Protect blueprint
+        # Return a URL for Protect blueprint
         endpoint = '%s.%s' % (self.get_config('BLUEPRINT_NAME'), endpoint)
         return url_for(endpoint, **kwargs)
 
@@ -60,7 +65,10 @@ class Protect(object):
         rv = self.get_config('MSGS')['MSG_' + key]
         return localize_callback(rv[0], **kwargs), rv[1]
 
-    def set_defaults(self):
+    def _ctx(self):
+        return dict(url_for_protect=self.url_for_protect, protect=LocalProxy(lambda: current_app.extensions['protect']))
+
+    def _set_core_defaults(self):
         self._set_defaults(self.__DEFAULT_CORE_CONFIG)
         if self._validator:
             self._set_defaults(self._validator.get_defaults())
@@ -70,9 +78,9 @@ class Protect(object):
             for key, value in values.items():
                 self.app.config.setdefault('PROTECT_'+key, value)
         for key, value in values.items():
-            self._config[key]=value
+            self._config[key] = value
 
-    def set_config(self):
+    def _set_core_config(self):
         if self.app:
             self._set_config(self._get_app_defaults())
         if self._validator:
@@ -82,7 +90,7 @@ class Protect(object):
             self._validator.initialize_config(self._config)
 
     def _get_app_defaults(self):
-        val={}
+        val = {}
         for key, value in self.app.config.items():
             if key.startswith('PROTECT_'):
                 val[key[len('PROTECT_'):]] = value
@@ -90,9 +98,4 @@ class Protect(object):
 
     def _set_config(self, values):
         for key, value in values.items():
-            self._config[key]=value
-
-    def get_config(self, key):
-        if self.app:
-            return self.app.config.get('PROTECT_'+key, self._config.get(key, self.__DEFAULT_CORE_CONFIG[key])) or self._config.get(key, self.__DEFAULT_CORE_CONFIG[key]) or self.__DEFAULT_CORE_CONFIG[key]
-        return self._config.get(key, self.__DEFAULT_CORE_CONFIG[key]) or self.__DEFAULT_CORE_CONFIG[key]
+            self._config[key] = value

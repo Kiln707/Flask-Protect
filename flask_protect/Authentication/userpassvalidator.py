@@ -2,7 +2,7 @@ from flask import render_template, redirect, current_app
 from werkzeug import LocalProxy
 from .mixins import SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin
 from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm, ForgotPasswordForm, ResetPasswordForm, ChangePasswordForm, ConfirmEmailForm
-from .utils import _protect, _validator, get_field
+from .utils import _protect, _validator
 from ..utils import safe_url, set_request_next, url_for_protect, get_redirect_url, get_request_form
 from ..Session import FLogin_Manager
 import os
@@ -16,16 +16,16 @@ def login(form):
     #If allowing both email and username, or using email
     user = _validator.get_user_from_form(form)
     #       VALIDATE User
-    if _validator.validate_user(user, get_field(form, 'PASSWORD').data):
+    if _validator.validate_user(user, _validator.get_field(form, 'PASSWORD').data):
         _validator.login_user(user) #Valid, login user
         return True
     #Invalid username/email/identifier or password. Add error to field
     if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL'):
-        get_field(form, 'IDENTIFIER').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
+        _validator.get_field(form, 'IDENTIFIER').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
     elif _validator.config_or_default('USE_EMAIL_AS_ID'):
-        get_field(form, 'EMAIL').errors.append(_validator.get_msg_config('BAD_EMAIL_PASS')[0])
+        _validator.get_field(form, 'EMAIL').errors.append(_validator.get_msg_config('BAD_EMAIL_PASS')[0])
     else:
-        get_field(form, 'IDENTIFIER').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
+        _validator.get_field(form, 'IDENTIFIER').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
     return False
 
 def register(form):
@@ -50,7 +50,7 @@ def reset_password(form):
     #   take new password, hash and update user DB with new password
     user = _validator.get_user_from_form(form=form)
     if user:
-        _validator.reset_user_password(user, get_field(form=form, key='PASSWORD').data)
+        _validator.reset_user_password(user, _validator.get_field(form=form, key='PASSWORD').data)
         return True
     return False
 
@@ -59,8 +59,8 @@ def change_password(form):
     #   take new password, hash and update user DB with new password
     user = _validator.current_user()
     if user:
-        current_password = get_field(form=form, key='CURRENT_PASSWORD').data
-        new_password = get_field(form=form, key='PASSWORD').data
+        current_password = _validator.get_field(form=form, key='CURRENT_PASSWORD').data
+        new_password = _validator.get_field(form=form, key='PASSWORD').data
         return _validator.change_user_password(identifier=user, current_password=current_password, new_password=new_password)
     return False
 
@@ -272,19 +272,32 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
     #
     #   Validator Functions
     #
+    def get_user(self, identifier):
+        if isinstance(identifier, self._datastore.UserModel):
+            return identifier
+        user=None
+        if isinstance(identifier, int):
+            user = self._datastore.get_user_by_id(identifier)
+        if not user and ( ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or self.config_or_default('USE_EMAIL_AS_ID') ):
+            user = self._datastore.get_user_by_email(identifier)
+        #If allowing both email and username and user not already found by email, OR not using email
+        if not user and ( ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not self.config_or_default('USE_EMAIL_AS_ID') ):
+            user = self._datastore.get_user_by_identifier(identifier)
+        return user
+
     def get_user_from_form(self, form):
         user_identifier=None
         if self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or self.config_or_default('USE_EMAIL_AS_ID'):
-            field = get_field(form, 'EMAIL')
+            field = self.get_field(form, 'EMAIL')
             if field:
                 user_identifier = field.data
         #If allowing both email and username and user not already found by email, OR not using email
         if ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user_identifier ) or not self.config_or_default('USE_EMAIL_AS_ID'):
-            field = get_field(form, 'IDENTIFIER')
+            field = self.get_field(form, 'IDENTIFIER')
             if field:
                 user_identifier = field.data
         if not user_identifier:
-            field = get_field(form, 'USER_ID')
+            field = self.get_field(form, 'USER_ID')
             if field:
                 user_identifier = int(field.data)
         try:
