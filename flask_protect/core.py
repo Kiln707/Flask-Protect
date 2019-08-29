@@ -9,8 +9,8 @@ class Protect(object):
     __DEFAULT_CORE_CONFIG = {
         # Basic Functionality
         'BLUEPRINT_NAME': 'protect',
-        'URL_PREFIX':None,
-        'SUBDOMAIN':None,
+        'URL_PREFIX': None,
+        'SUBDOMAIN': None,
         'FLASH_MESSAGES': True,
     }
 
