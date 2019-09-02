@@ -129,42 +129,6 @@ class TestValidator(ValidatorMixin):
     def initialize(self, app, blueprint, **kwargs):
         pass
 
-    ###########################################################################################
-    #   Does not require override
-    ###########################################################################################
-    #
-    # User Functions
-    #
-    def get_user(self, identifier):
-        if isinstance(identifier, self._datastore.UserModel):
-            return identifier
-        user=None
-        if isinstance(identifier, int):
-            user = self._datastore.get_user_by_id(identifier)
-        if not user and ( ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or self.config_or_default('USE_EMAIL_AS_ID') ):
-            user = self._datastore.get_user_by_email(identifier)
-        #If allowing both email and username and user not already found by email, OR not using email
-        if not user and ( ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not self.config_or_default('USE_EMAIL_AS_ID') ):
-            user = self._datastore.get_user_by_identifier(identifier)
-        return user
-
-    def login_user(self, user, remember=False, duration=None, force=False, fresh=True):
-        self._login_manager.login_user(user=user, remember=remember, duration=duration, force=force, fresh=fresh)
-
-    def logout_user(self):
-        self._login_manager.logout_user()
-
-    def current_user(self):
-        user = self._login_manager.current_user()
-        return self._datastore.get_user_by_id(user.id)
-
-    def get_field(form, key):
-        if hasattr(form, self.get_form_field_config(key)):
-            return getattr(form, self.get_form_field_config(key))
-        elif hasattr(form, key):
-            return getattr(form, key)
-        return None
-
 
 def test_initialize_validator():
     pass
