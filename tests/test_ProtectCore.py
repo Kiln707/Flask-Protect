@@ -89,38 +89,50 @@ def test_get_config_with_incomplete_config_with_no_flaskapp():
 #
 #   Testing Validator setup
 #
+from flask_protect.Datastore import UserDatastoreMixin
+class UserDatastoreMixin():
+    def __init__(self, user_model):
+        self.UserModel = user_model
+        self.users = []
+
+    def get_user(self, id):
+        if isinstance(id, self.UserModel):
+            return id
+        elif 0 <= id < len(self.users):
+            return self.users[id]
+        return None
+
+    def create_user(self, **kwargs):
+        id = len(self.users)
+        newUser = self.UserModel(id=id, **kwargs)
+        self.users.append(newUser)
+        return newUser
+
+    def set_user_password(self, id, newPassword):
+        user = self.get_user(id)
+        user.password = newPassword
+
+
 from flask_protect.Authentication import ValidatorMixin
 class TestValidator(ValidatorMixin):
     def __init__(self, datastore, login_manager, **kwargs):
-        self._kwargs = kwargs
-        self._datastore=datastore
-        self._login_manager=login_manager
-        self._config=None
+        super().__init__(datastore, login_manager, **kwargs)
 
-    ############################################################################################
-    #   Requires override
-    ############################################################################################
-    #
-    # User Functions
-    #
     def create_user(self, **kwargs):
-        raise NotImplementedError()
+        return self._datastore.create_user(**kwargs)
 
     def change_user_password(self, identifier, current_password, new_password):
-        raise NotImplementedError()
+        user = self._datastore.get_user(identifier)
+        if user.password == current_password:
+            self.reset_user_password(user)
 
     def reset_user_password(self, identifier, new_password):
-        raise NotImplementedError()
+        self._datastore.set_user_password(identifier)
 
     def login_user(self, user=None):
         raise NotImplementedError()
 
     def logout_user(self):
-        raise NotImplementedError()
-    #
-    # validator actions
-    #
-    def get_defaults(self):
         raise NotImplementedError()
 
     def routes(self, blueprint):
