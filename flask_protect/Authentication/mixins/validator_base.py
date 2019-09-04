@@ -2,7 +2,7 @@ from collections import ChainMap
 from flask import request
 
 class ValidatorMixin():
-    def __init__(self, datastore, login_manager, **kwargs):
+    def __init__(self, datastore, login_manager=None, **kwargs):
         self._kwargs = kwargs
         self._datastore=datastore
         self._login_manager=login_manager
@@ -66,6 +66,11 @@ class ValidatorMixin():
     #
     # validator actions
     #
+    def post_initialization(self):
+        if type(self) is not ValidatorMixin:
+            super().post_initialization()
+
+
     def initialize_blueprint(self, app, blueprint, **kwargs):
         self.initialize(app, blueprint, **kwargs)
         self.routes(blueprint)
@@ -80,10 +85,9 @@ class ValidatorMixin():
         return form, False
 
     def get_defaults(self):
-        defaults = {}
-        if type(self) is not ValidatorMixin:
-            defaults = super().get_defaults().copy()
-        return dict(ChainMap(self.__DEFAULT_CONFIG, defaults))
+        if hasattr(self, '__DEFAULT_CONFIG'):
+            return self.__DEFAULT_CONFIG.copy()
+        return dict()
 
     def get_url_config(self, key):
         return self.config_or_default('URLS')[key]

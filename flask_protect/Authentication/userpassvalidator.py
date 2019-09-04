@@ -267,7 +267,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         }
     }
 
-    def __init__(self, datastore, login_manager, crypt_context=None, **kwargs):
+    def __init__(self, datastore, login_manager=None, crypt_context=None, **kwargs):
         super().__init__(datastore=datastore, login_manager=login_manager, crypt_context=crypt_context, **kwargs)
     #
     #   Validator Functions

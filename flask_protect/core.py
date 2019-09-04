@@ -24,11 +24,12 @@ class Protect(object):
             self.init_app(app)
         else:
             self._set_core_defaults()
-        self._set_core_config()
+            self._set_core_config()
 
     def init_app(self, app):
         self.app = app
         self._set_core_defaults()
+        self._set_core_config()
         if self._register_blueprint:
             self.blueprint = self._create_blueprint()
             app.register_blueprint(self.blueprint)

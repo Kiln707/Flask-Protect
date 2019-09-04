@@ -89,6 +89,11 @@ def test_get_config_with_incomplete_config_with_no_flaskapp():
 #
 #   Testing Validator setup
 #
+class User_Model():
+    def __init__(self, id, password):
+        self.id=id
+        self.password=password
+
 from flask_protect.Datastore import UserDatastoreMixin
 class UserDatastoreMixin():
     def __init__(self, user_model):
@@ -114,12 +119,13 @@ class UserDatastoreMixin():
 
 
 from flask_protect.Authentication import ValidatorMixin
+from flask import session
 class TestValidator(ValidatorMixin):
-    def __init__(self, datastore, login_manager, **kwargs):
+    def __init__(self, datastore, login_manager=None, **kwargs):
         super().__init__(datastore, login_manager, **kwargs)
 
-    def create_user(self, **kwargs):
-        return self._datastore.create_user(**kwargs)
+    def create_user(self, id, password):
+        return self._datastore.create_user({'id':id, 'password':password})
 
     def change_user_password(self, identifier, current_password, new_password):
         user = self._datastore.get_user(identifier)
@@ -130,17 +136,31 @@ class TestValidator(ValidatorMixin):
         self._datastore.set_user_password(identifier)
 
     def login_user(self, user=None):
-        raise NotImplementedError()
+        session['user_id'] = user.id
 
     def logout_user(self):
-        raise NotImplementedError()
+        del session['user_id']
+
+    def user_logged_in(self):
+        return 'user_id' in session
+
+    def route(self):
+        return True
 
     def routes(self, blueprint):
-        raise NotImplementedError()
+        blueprint.add_url_rule(rule='/route', endpoint='route', view_func=self.route)
 
     def initialize(self, app, blueprint, **kwargs):
         pass
 
 
 def test_initialize_validator():
-    pass
+    from flask import Flask
+    from flask_protect import Protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+
+    protect = Protect(app=app, validator=validator)

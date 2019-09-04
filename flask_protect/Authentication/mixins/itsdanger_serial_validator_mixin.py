@@ -4,7 +4,7 @@ from .validator_base import ValidatorMixin
 from ...utils import get_within_delta
 
 class SerializingValidatorMixin(ValidatorMixin):
-    def __init__(self, datastore, login_manager, serializers={}, **kwargs):
+    def __init__(self, datastore, login_manager=None, serializers={}, **kwargs):
         super().__init__(datastore=datastore, login_manager=login_manager, **kwargs)
         self._serializers=serializers
 
@@ -46,9 +46,18 @@ class SerializingValidatorMixin(ValidatorMixin):
         expired = expired and (data is not None)
         return expired, invalid, data
 
+    def get_defaults(self):
+        defaults = {}
+        print(type(self))
+        if type(self) is not SerializingValidatorMixin:
+            defaults = super().get_defaults().copy()
+        if hasattr(self, '__DEFAULT_CONFIG'):
+            return dict(ChainMap(self.__DEFAULT_CONFIG, defaults))
+        if defaults:
+            return defaults
+        return dict()
+
     def initialize(self, app, blueprint, **kwargs):
         super().initialize(app, blueprint, **kwargs)
-
-    def initialize_config(self, config):
-        for name, salt in config['SALT'].items():
+        for name, salt in self.config_or_default('SALT').items():
             self.create_serializer(app, name, salt)

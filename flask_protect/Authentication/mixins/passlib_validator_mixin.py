@@ -3,7 +3,7 @@ from passlib.context import CryptContext
 from .validator_base import ValidatorMixin
 
 class CryptContextValidatorMixin(ValidatorMixin):
-    def __init__(self, datastore, login_manager, crypt_context=None, **kwargs):
+    def __init__(self, datastore, login_manager=None, crypt_context=None, **kwargs):
         super().__init__(datastore=datastore, login_manager=login_manager, **kwargs)
         self._cryptcontext=None
         self._set_crypt_context(crypt_context)
@@ -36,6 +36,17 @@ class CryptContextValidatorMixin(ValidatorMixin):
                 self._cryptcontext=CryptContext.from_string(crypt_context)
         elif isinstance(crypt_context, CryptContext):
             self._cryptcontext=crypt_context
+
+    def get_defaults(self):
+        defaults = {}
+        print(type(self))
+        if type(self) is not CryptContextValidatorMixin:
+            defaults = super().get_defaults().copy()
+        if hasattr(self, '__DEFAULT_CONFIG'):
+            return dict(ChainMap(self.__DEFAULT_CONFIG, defaults))
+        if defaults:
+            return defaults
+        return dict()
 
     def initialize(self, app, blueprint, **kwargs):
         super().initialize(app, blueprint, **kwargs)
