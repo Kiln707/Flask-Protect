@@ -2,8 +2,7 @@ from flask import render_template, redirect, current_app
 from werkzeug import LocalProxy
 from .mixins import SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin
 from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm, ForgotPasswordForm, ResetPasswordForm, ChangePasswordForm, ConfirmEmailForm
-from .utils import _protect, _validator
-from ..utils import safe_url, set_request_next, url_for_protect, get_redirect_url, get_request_form
+from ..utils import _protect, safe_url, set_request_next, url_for_protect, get_redirect_url, get_request_form
 from ..Session import FLogin_Manager
 import os
 
@@ -14,54 +13,54 @@ def login(form):
     user=None
     #   GET User
     #If allowing both email and username, or using email
-    user = _validator.get_user_from_form(form)
+    user = _protect.validator.get_user_from_form(form)
     #       VALIDATE User
-    if _validator.validate_user(user, _validator.get_field(form, 'PASSWORD').data):
-        _validator.login_user(user) #Valid, login user
+    if _protect.validator.validate_user(user, _protect.validator.get_field(form, 'PASSWORD').data):
+        _protect.validator.login_user(user) #Valid, login user
         return True
     #Invalid username/email/identifier or password. Add error to field
-    if _validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL'):
-        _validator.get_field(form, 'IDENTIFIER').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
-    elif _validator.config_or_default('USE_EMAIL_AS_ID'):
-        _validator.get_field(form, 'EMAIL').errors.append(_validator.get_msg_config('BAD_EMAIL_PASS')[0])
+    if _protect.validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL'):
+        _protect.validator.get_field(form, 'IDENTIFIER').errors.append(_protect.validator.get_msg_config('BAD_USER_PASS')[0])
+    elif _protect.validator.config_or_default('USE_EMAIL_AS_ID'):
+        _protect.validator.get_field(form, 'EMAIL').errors.append(_protect.validator.get_msg_config('BAD_EMAIL_PASS')[0])
     else:
-        _validator.get_field(form, 'IDENTIFIER').errors.append(_validator.get_msg_config('BAD_USER_PASS')[0])
+        _protect.validator.get_field(form, 'IDENTIFIER').errors.append(_protect.validator.get_msg_config('BAD_USER_PASS')[0])
     return False
 
 def register(form):
     user_data = form.to_dict(form)
-    user=_validator.create_user(**user_data)
+    user=_protect.validator.create_user(**user_data)
     #if confirm email address
     #generate code, and email to address
     return True
 
 def forgot_password(form):
     # Verify account exists with given email address/Get User
-    user = _validator.get_user_from_form(form=form)
+    user = _protect.validator.get_user_from_form(form=form)
     # generate code to allow reset password
     if user:
-        if not _validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS') and _validator.config_or_default('SEND_EMAIL'):
+        if not _protect.validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS') and _protect.validator.config_or_default('SEND_EMAIL'):
             # Send email, with link/code to reset password, redirect
-            _validator.send_reset_password_instructions(user)
+            _protect.validator.send_reset_password_instructions(user)
         return True
     return False
 
 def reset_password(form):
     #   take new password, hash and update user DB with new password
-    user = _validator.get_user_from_form(form=form)
+    user = _protect.validator.get_user_from_form(form=form)
     if user:
-        _validator.reset_user_password(user, _validator.get_field(form=form, key='PASSWORD').data)
+        _protect.validator.reset_user_password(user, _protect.validator.get_field(form=form, key='PASSWORD').data)
         return True
     return False
 
 def change_password(form):
     #   Check that current password is correct for user
     #   take new password, hash and update user DB with new password
-    user = _validator.current_user()
+    user = _protect.validator.current_user()
     if user:
-        current_password = _validator.get_field(form=form, key='CURRENT_PASSWORD').data
-        new_password = _validator.get_field(form=form, key='PASSWORD').data
-        return _validator.change_user_password(identifier=user, current_password=current_password, new_password=new_password)
+        current_password = _protect.validator.get_field(form=form, key='CURRENT_PASSWORD').data
+        new_password = _protect.validator.get_field(form=form, key='PASSWORD').data
+        return _protect.validator.change_user_password(identifier=user, current_password=current_password, new_password=new_password)
     return False
 
 #
@@ -368,7 +367,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
     def send_mail(self, action, user, **context):
         if self.config_or_default('SEND_EMAIL'):
             mail=current_app.extensions.get('mail')
-            subject=_validator.config_or_default('EMAIL_SUBJECT')[action]
+            subject=self.config_or_default('EMAIL_SUBJECT')[action]
             recipient=getattr(user, self.get_user_field('EMAIL'))
             msg = Message(subject=subject, sender=self.config_or_default('EMAIL_SENDER'), recipients=[recipient])
             if self.config_or_default('EMAIL_PLAINTEXT'):

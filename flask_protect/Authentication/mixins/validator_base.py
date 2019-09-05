@@ -1,4 +1,3 @@
-from collections import ChainMap
 from flask import request
 
 class ValidatorMixin():

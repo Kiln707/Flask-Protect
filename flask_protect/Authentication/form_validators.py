@@ -1,5 +1,5 @@
 from builtins import object
-from .utils import _datastore
+from ..utils import _protect
 from wtforms import ValidationError, validators
 
 #
@@ -28,11 +28,11 @@ password_required = Required(message='PASSWORD_NOT_PROVIDED')
 password_length = Length(min=6, max=128, message='PASSWORD_INVALID_LENGTH')
 
 def unique_user_email(form, field):
-    if _datastore.get_user(field.data) is not None:
+    if _protect.validator._datastore.get_user(field.data) is not None:
         msg = get_message('EMAIL_ALREADY_ASSOCIATED', email=field.data)[0]
         raise ValidationError(msg)
 
 def valid_user_email(form, field):
-    form.user = _datastore.get_user(field.data)
+    form.user = _protect.validator._datastore.get_user(field.data)
     if form.user is None:
         raise ValidationError(get_message('USER_DOES_NOT_EXIST')[0])

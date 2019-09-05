@@ -7,8 +7,6 @@ from itsdangerous import URLSafeTimedSerializer
 from ._compat import urlsplit
 
 _protect = LocalProxy(lambda: current_app.extensions['protect'])
-_validator = LocalProxy(lambda: _protect._validator)
-_datastore = LocalProxy(lambda: _validator._datastore)
 
 def url_for_protect(endpoint, **kwargs):
     return _protect.url_for_protect(endpoint, **kwargs)

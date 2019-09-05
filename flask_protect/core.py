@@ -16,7 +16,7 @@ class Protect(object):
 
     def __init__(self, app=None, validator=None, register_blueprint=True, **kwargs):
         self.app = None
-        self._validator = validator
+        self.validator = validator
         self._register_blueprint = register_blueprint
         self._kwargs = kwargs
         self._config = {}
@@ -42,8 +42,8 @@ class Protect(object):
                     url_prefix=self._config['URL_PREFIX'],
                     subdomain=self._config['SUBDOMAIN'],
                     template_folder='templates')
-        if self._validator:
-            self._validator.initialize_blueprint(self.app, bp)
+        if self.validator:
+            self.validator.initialize_blueprint(self.app, bp)
         self._blueprint = bp
         return bp
 
@@ -62,17 +62,13 @@ class Protect(object):
         endpoint = '%s.%s' % (self.get_config('BLUEPRINT_NAME'), endpoint)
         return url_for(endpoint, **kwargs)
 
-    def get_message(key, **kwargs):
-        rv = self.get_config('MSGS')['MSG_' + key]
-        return localize_callback(rv[0], **kwargs), rv[1]
-
     def _ctx(self):
         return dict(url_for_protect=self.url_for_protect, protect=LocalProxy(lambda: current_app.extensions['protect']))
 
     def _set_core_defaults(self):
         self._set_defaults(self.__DEFAULT_CORE_CONFIG)
-        if self._validator:
-            self._set_defaults(self._validator.get_defaults())
+        if self.validator:
+            self._set_defaults(self.validator.get_defaults())
 
     def _set_defaults(self, values):
         if self.app:
@@ -84,11 +80,11 @@ class Protect(object):
     def _set_core_config(self):
         if self.app:
             self._set_config(self._get_app_defaults())
-        if self._validator:
-            self._set_config(self._validator._kwargs)
+        if self.validator:
+            self._set_config(self.validator._kwargs)
         self._set_config(self._kwargs)
-        if self._validator:
-            self._validator.initialize_config(self._config)
+        if self.validator:
+            self.validator.initialize_config(self._config)
 
     def _get_app_defaults(self):
         val = {}

@@ -3,7 +3,6 @@ from flask import Markup, current_app, flash, request
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, Field, HiddenField, PasswordField, \
 StringField, SubmitField, ValidationError, validators
-from .utils import _datastore
 
 class BaseForm(FlaskForm):
     def __init__(self, method='POST', action='', encoding='multipart/form-data', *args, **kwargs):

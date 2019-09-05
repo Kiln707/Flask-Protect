@@ -1,16 +1,15 @@
 
 
 def test_imports():
-    from flask_protect import Protect, url_for_protect, safe_url, _protect, _validator
+    from flask_protect import Protect, url_for_protect, safe_url, _protect
     from flask_protect.utils import get_within_delta
-
-def test_Setup_with_no_flaskapp():
-    from flask_protect import Protect
-    protect = Protect()
 
 #
 #   Without Flask
 #
+def test_Setup_with_no_flaskapp():
+    from flask_protect import Protect
+    protect = Protect()
 
 #
 #   Configuration Tests
@@ -87,6 +86,103 @@ def test_get_config_with_incomplete_config_with_no_flaskapp():
         assert protect.get_config(key) == value
 
 #
+#   With FlaskApp
+#
+def test_Setup_with_flaskapp():
+    from flask import Flask
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+    from flask_protect import Protect
+    protect = Protect(app=app)
+
+def test_configuration():
+    from flask import Flask
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+    from flask_protect import Protect
+    defaults={
+        #Basic Functionality
+        'BLUEPRINT_NAME': 'protect',
+        'URL_PREFIX':None,
+        'SUBDOMAIN':None,
+        'FLASH_MESSAGES': True,
+    }
+    protect = Protect(app=app)
+    for key, value in defaults.items():
+        assert protect._config[key] == value
+
+def test_custom_configuration():
+    from flask import Flask
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+    from flask_protect import Protect
+    new_config={
+        #Basic Functionality
+        'BLUEPRINT_NAME': 'protect',
+        'URL_PREFIX':None,
+        'SUBDOMAIN':None,
+        'FLASH_MESSAGES': True,
+    }
+    protect = Protect(app=app, **new_config)
+    for key, value in new_config.items():
+        assert protect._config[key] == value
+
+def test_custom_configuration_missing_values():
+    from flask import Flask
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+    from flask_protect import Protect
+    new_config={
+        #Basic Functionality
+        'BLUEPRINT_NAME': None,
+        'URL_PREFIX':None,
+        'SUBDOMAIN':None,
+        'FLASH_MESSAGES': True,
+    }
+    protect = Protect(app=app, **new_config)
+    for key, value in new_config.items():
+        if key == 'BLUEPRINT_NAME':
+            assert protect.get_config(key) != value
+        else:
+            assert protect.get_config(key) == value
+
+def test_get_config():
+    from flask import Flask
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    from flask_protect import Protect
+    defaults={
+        #Basic Functionality
+        'BLUEPRINT_NAME': 'protect',
+        'URL_PREFIX':None,
+        'SUBDOMAIN':None,
+        'FLASH_MESSAGES': True,
+    }
+    protect = Protect(app=app)
+    for key, value in defaults.items():
+        assert protect.get_config(key) == value
+
+def test_get_config_with_incomplete_config():
+    from flask import Flask
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    from flask_protect import Protect
+    defaults={
+        #Basic Functionality
+        'BLUEPRINT_NAME': 'protect',
+        'URL_PREFIX':None,
+        'SUBDOMAIN':None,
+        'FLASH_MESSAGES': True,
+    }
+    protect = Protect(app=app)
+    protect._config.pop('BLUEPRINT_NAME')
+    assert 'BLUEPRINT_NAME' not in protect._config
+    for key, value in defaults.items():
+        assert protect.get_config(key) == value
+
+#
 #   Testing Validator setup
 #
 class User_Model():
@@ -121,6 +217,11 @@ class UserDatastoreMixin():
 from flask_protect.Authentication import ValidatorMixin
 from flask import session
 class TestValidator(ValidatorMixin):
+
+    __DEFAULT_CONFIG = {
+        'TEST': 'TEST'
+    }
+
     def __init__(self, datastore, login_manager=None, **kwargs):
         super().__init__(datastore, login_manager, **kwargs)
 
@@ -162,5 +263,4 @@ def test_initialize_validator():
 
     datastore = UserDatastoreMixin(User_Model)
     validator = TestValidator(datastore)
-
     protect = Protect(app=app, validator=validator)
