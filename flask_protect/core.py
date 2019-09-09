@@ -71,19 +71,17 @@ class Protect(object):
             self._set_defaults(self.validator.get_defaults())
 
     def _set_defaults(self, values):
-        if self.app:
-            for key, value in values.items():
-                self.app.config.setdefault('PROTECT_'+key, value)
         for key, value in values.items():
+            if self.app:
+                self.app.config.setdefault('PROTECT_'+key, value)
             self._config[key] = value
 
     def _set_core_config(self):
         if self.app:
             self._set_config(self._get_app_defaults())
-        if self.validator:
-            self._set_config(self.validator._kwargs)
         self._set_config(self._kwargs)
         if self.validator:
+            self._set_config(self.validator._kwargs)
             self.validator.initialize_config(self._config)
 
     def _get_app_defaults(self):

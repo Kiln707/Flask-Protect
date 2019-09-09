@@ -51,4 +51,4 @@ class CryptContextValidatorMixin(ValidatorMixin):
     def initialize(self, app, blueprint, **kwargs):
         super().initialize(app, blueprint, **kwargs)
         if not self._cryptcontext:
-            self._cryptcontext = CryptContext(**self.config_or_default('CRYPT_SETTINGS'))
+            self._cryptcontext = CryptContext(**self.get_config('CRYPT_SETTINGS'))

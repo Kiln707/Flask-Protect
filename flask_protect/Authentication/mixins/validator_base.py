@@ -76,6 +76,8 @@ class ValidatorMixin():
 
     def initialize_config(self, config):
         self._config = config
+        for key, value in self._kwargs.items():
+            self._config[key] = value
 
     def get_and_validate_form(self, form_key, **kwargs):
         form = self.get_form_config(form_key)(**kwargs)
@@ -89,28 +91,28 @@ class ValidatorMixin():
         return dict()
 
     def get_url_config(self, key):
-        return self.config_or_default('URLS')[key]
+        return self.get_config('URLS')[key]
 
     def get_action_config(self, key):
-        return self.config_or_default('ACTIONS')[key]
+        return self.get_config('ACTIONS')[key]
 
     def get_form_config(self, key):
-        return self.config_or_default('FORMS')[key]
+        return self.get_config('FORMS')[key]
 
     def get_form_field_config(self, key):
-        return self.config_or_default('FORM_FIELDS')[key]
+        return self.get_config('FORM_FIELDS')[key]
 
     def get_msg_config(self, key):
-        return self.config_or_default('MSGS')[key]
+        return self.get_config('MSGS')[key]
 
     def get_template_config(self, key):
-        return self.config_or_default('TEMPLATES')[key]
+        return self.get_config('TEMPLATES')[key]
 
     def get_redirect_config(self, key):
-        return self.config_or_default('REDIRECT')[key]
+        return self.get_config('REDIRECT')[key]
 
     def get_user_field(self, key):
-        return self.config_or_default('USER_FIELDS')[key]
+        return self.get_config('USER_FIELDS')[key]
 
-    def config_or_default(self, key):
-        return (self._config[key] or self.get_defaults()[key])
+    def get_config(self, key):
+        return self._config.get(key, self.get_defaults()[key])

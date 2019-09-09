@@ -9,7 +9,7 @@ class SerializingValidatorMixin(ValidatorMixin):
         self._serializers=serializers
 
     def get_salt_config(self, key):
-        return self.config_or_default('SALT')[key]
+        return self.get_config('SALT')[key]
 
     def add_serializer(self, name, serializer):
         self._serializers[name]=serializer
@@ -59,5 +59,5 @@ class SerializingValidatorMixin(ValidatorMixin):
 
     def initialize(self, app, blueprint, **kwargs):
         super().initialize(app, blueprint, **kwargs)
-        for name, salt in self.config_or_default('SALT').items():
+        for name, salt in self.get_config('SALT').items():
             self.create_serializer(app, name, salt)

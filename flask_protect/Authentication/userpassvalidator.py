@@ -19,9 +19,9 @@ def login(form):
         _protect.validator.login_user(user) #Valid, login user
         return True
     #Invalid username/email/identifier or password. Add error to field
-    if _protect.validator.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL'):
+    if _protect.validator.get_config('ALLOW_BOTH_IDENTIFIER_AND_EMAIL'):
         _protect.validator.get_field(form, 'IDENTIFIER').errors.append(_protect.validator.get_msg_config('BAD_USER_PASS')[0])
-    elif _protect.validator.config_or_default('USE_EMAIL_AS_ID'):
+    elif _protect.validator.get_config('USE_EMAIL_AS_ID'):
         _protect.validator.get_field(form, 'EMAIL').errors.append(_protect.validator.get_msg_config('BAD_EMAIL_PASS')[0])
     else:
         _protect.validator.get_field(form, 'IDENTIFIER').errors.append(_protect.validator.get_msg_config('BAD_USER_PASS')[0])
@@ -39,7 +39,7 @@ def forgot_password(form):
     user = _protect.validator.get_user_from_form(form=form)
     # generate code to allow reset password
     if user:
-        if not _protect.validator.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS') and _protect.validator.config_or_default('SEND_EMAIL'):
+        if not _protect.validator.get_config('FORGOT_PASS_DIRECT_TO_RESET_PASS') and _protect.validator.get_config('SEND_EMAIL'):
             # Send email, with link/code to reset password, redirect
             _protect.validator.send_reset_password_instructions(user)
         return True
@@ -277,21 +277,21 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         user=None
         if isinstance(identifier, int):
             user = self._datastore.get_user_by_id(identifier)
-        if not user and ( ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or self.config_or_default('USE_EMAIL_AS_ID') ):
+        if not user and ( ( self.get_config('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or self.get_config('USE_EMAIL_AS_ID') ):
             user = self._datastore.get_user_by_email(identifier)
         #If allowing both email and username and user not already found by email, OR not using email
-        if not user and ( ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not self.config_or_default('USE_EMAIL_AS_ID') ):
+        if not user and ( ( self.get_config('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user ) or not self.get_config('USE_EMAIL_AS_ID') ):
             user = self._datastore.get_user_by_identifier(identifier)
         return user
 
     def get_user_from_form(self, form):
         user_identifier=None
-        if self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or self.config_or_default('USE_EMAIL_AS_ID'):
+        if self.get_config('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') or self.get_config('USE_EMAIL_AS_ID'):
             field = self.get_field(form, 'EMAIL')
             if field:
                 user_identifier = field.data
         #If allowing both email and username and user not already found by email, OR not using email
-        if ( self.config_or_default('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user_identifier ) or not self.config_or_default('USE_EMAIL_AS_ID'):
+        if ( self.get_config('ALLOW_BOTH_IDENTIFIER_AND_EMAIL') and not user_identifier ) or not self.get_config('USE_EMAIL_AS_ID'):
             field = self.get_field(form, 'IDENTIFIER')
             if field:
                 user_identifier = field.data
@@ -313,7 +313,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         valid=False
         new_hash=None
         if user:
-            if self.config_or_default('AUTO_UPDATE_HASH'):
+            if self.get_config('AUTO_UPDATE_HASH'):
                 valid, new_hash = self.validate_password_and_update_hash(password, user.password, **kwargs)
             else:
                 valid = self.validate_password(password, user.password, **kwargs)
@@ -365,16 +365,16 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         return self.generate_token(action, data)
 
     def send_mail(self, action, user, **context):
-        if self.config_or_default('SEND_EMAIL'):
+        if self.get_config('SEND_EMAIL'):
             mail=current_app.extensions.get('mail')
-            subject=self.config_or_default('EMAIL_SUBJECT')[action]
+            subject=self.get_config('EMAIL_SUBJECT')[action]
             recipient=getattr(user, self.get_user_field('EMAIL'))
-            msg = Message(subject=subject, sender=self.config_or_default('EMAIL_SENDER'), recipients=[recipient])
-            if self.config_or_default('EMAIL_PLAINTEXT'):
-                template=self.config_or_default('EMAIL_TXT_TEMPLATE')[action]
+            msg = Message(subject=subject, sender=self.get_config('EMAIL_SENDER'), recipients=[recipient])
+            if self.get_config('EMAIL_PLAINTEXT'):
+                template=self.get_config('EMAIL_TXT_TEMPLATE')[action]
                 msg.body=render_template(template, **context)
-            if self.config_or_default('EMAIL_HTML'):
-                template=self.config_or_default('EMAIL_HTML_TEMPLATE')[action]
+            if self.get_config('EMAIL_HTML'):
+                template=self.get_config('EMAIL_HTML_TEMPLATE')[action]
                 msg.html=render_template(template, **context)
             mail.send(msg)
     #
@@ -388,7 +388,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
                 redirect_url = get_redirect_url(self.get_redirect_config(action))
                 return redirect(redirect_url)
         template = self.get_template_config(action)
-        return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
+        return render_template(template, layout=self.get_config('LAYOUT_TEMPLATE'), form=form)
 
     def login_view(self):
         if self._login_manager.user_is_anonymous_user():
@@ -411,14 +411,14 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
                 action_func = self.get_action_config('FORGOT_PASS')
                 reset_code = self.generate_code(self.get_user_from_form(form), 'RESET_SALT')
                 if action_func(form):
-                    if self.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
+                    if self.get_config('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
                         return redirect(url_for_protect('reset_password', reset_code=reset_code))
                     else:
                         redirect_url = get_redirect_url(self.get_redirect_config('FORGOT_PASS'))
                         return redirect(redirect_url)
             template = self.get_template_config('FORGOT_PASS')
-            return render_template(template, layout=self.config_or_default('LAYOUT_TEMPLATE'), form=form)
-            if self.config_or_default('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
+            return render_template(template, layout=self.get_config('LAYOUT_TEMPLATE'), form=form)
+            if self.get_config('FORGOT_PASS_DIRECT_TO_RESET_PASS'):
                 return redirect(url_for_protect('reset_password'))
         else:
             redirect_url = get_redirect_url(self.get_redirect_config('LOGIN'))
