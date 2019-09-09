@@ -183,7 +183,7 @@ def test_get_config_with_incomplete_config():
         assert protect.get_config(key) == value
 
 #
-#   Testing Validator setup
+#   Testing basic Validator setup and use
 #
 class User_Model():
     def __init__(self, id, password):
@@ -248,6 +248,9 @@ class TestValidator(ValidatorMixin):
     def route(self):
         return True
 
+    def get_defaults(self):
+        return self.__DEFAULT_CONFIG.copy()
+
     def routes(self, blueprint):
         blueprint.add_url_rule(rule='/route', endpoint='route', view_func=self.route)
 
@@ -256,6 +259,91 @@ class TestValidator(ValidatorMixin):
 
 
 def test_initialize_validator():
+    from flask import Flask
+    from flask_protect import Protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+
+def test_validator_configuration():
+    from flask import Flask
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+    from flask_protect import Protect
+    defaults={
+        'TEST': 'TEST'
+    }
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+    print(protect.validator._config)
+    for key, value in defaults.items():
+        assert protect.validator._config[key] == value
+
+def test_validator_custom_configuration():
+    from flask import Flask
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+    from flask_protect import Protect
+    new_config={
+        'TEST': 'NEWTEST'
+    }
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore, **new_config)
+    protect = Protect(app=app, validator=validator)
+    for key, value in new_config.items():
+        assert protect.validator._config[key] == value
+
+def test_validator_custom_configuration_missing_values():
+    from flask import Flask
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+    from flask_protect import Protect
+    new_config={
+        'TEST': 'NEWTEST'
+    }
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore, **new_config)
+    protect = Protect(app=app, validator=validator)
+    protect.validator._config.pop('TEST')
+    for key, value in new_config.items():
+        assert protect.validator.get_config(key) != value
+
+def test_validator_config():
+    from flask import Flask
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+    from flask_protect import Protect
+    defaults={
+        'TEST': 'TEST'
+    }
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+    for key, value in defaults.items():
+        assert protect.validator.get_config(key) == value
+
+def test_validator_config_with_incomplete_config():
+    from flask import Flask
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    from flask_protect import Protect
+    defaults={
+        'TEST': 'TEST'
+    }
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+    protect.validator._config.pop('TEST')
+    assert 'TEST' not in protect.validator._config
+    for key, value in defaults.items():
+        assert protect.validator.get_config(key) == value
+
+def test_validator():
     from flask import Flask
     from flask_protect import Protect
     app = Flask(__name__)
