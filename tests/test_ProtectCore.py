@@ -186,7 +186,7 @@ def test_get_config_with_incomplete_config():
 #   Testing basic Validator setup and use
 #
 class User_Model():
-    def __init__(self, id, password):
+    def __init__(self, id, identifier, password):
         self.id=id
         self.password=password
 
@@ -225,9 +225,6 @@ class TestValidator(ValidatorMixin):
     def __init__(self, datastore, login_manager=None, **kwargs):
         super().__init__(datastore, login_manager, **kwargs)
 
-    def create_user(self, id, password):
-        return self._datastore.create_user({'id':id, 'password':password})
-
     def change_user_password(self, identifier, current_password, new_password):
         user = self._datastore.get_user(identifier)
         if user.password == current_password:
@@ -245,17 +242,11 @@ class TestValidator(ValidatorMixin):
     def user_logged_in(self):
         return 'user_id' in session
 
-    def route(self):
-        return True
-
     def get_defaults(self):
         return self.__DEFAULT_CONFIG.copy()
 
     def routes(self, blueprint):
         blueprint.add_url_rule(rule='/route', endpoint='route', view_func=self.route)
-
-    def initialize(self, app, blueprint, **kwargs):
-        pass
 
 
 def test_initialize_validator():
@@ -343,12 +334,16 @@ def test_validator_config_with_incomplete_config():
     for key, value in defaults.items():
         assert protect.validator.get_config(key) == value
 
-def test_validator():
+def test_validator_create_user():
     from flask import Flask
-    from flask_protect import Protect
+    from flask_protect import Protect, url_for_protect
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'change-me'
 
     datastore = UserDatastoreMixin(User_Model)
     validator = TestValidator(datastore)
     protect = Protect(app=app, validator=validator)
+
+    assert len(datastore.users) == 0
+    protect.validator.create_user(identifier='test_user', password='password')
+    assert len(datastore.users) == 1
