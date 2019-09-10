@@ -8,8 +8,7 @@ from ._compat import urlsplit
 
 _protect = LocalProxy(lambda: current_app.extensions['protect'])
 
-def url_for_protect(endpoint, **kwargs):
-    return _protect.url_for_protect(endpoint, **kwargs)
+url_for_protect = LocalProxy(lambda: _protect.url_for_protect)
 
 def get_url(endpoint_or_url):
     try:
