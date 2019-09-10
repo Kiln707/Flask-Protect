@@ -35,6 +35,7 @@ class Protect(object):
             app.register_blueprint(self.blueprint)
             app.context_processor(self._ctx)
         app.extensions['protect'] = self
+        app.context_processor(self._ctx)
 
     def _create_blueprint(self):
         bp = Blueprint(self._config['BLUEPRINT_NAME'],
