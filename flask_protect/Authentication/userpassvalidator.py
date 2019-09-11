@@ -308,8 +308,8 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
         kwargs['password'] = self.hash_password(kwargs['password'])
         return self._datastore.create_user(**kwargs)
 
-    def validate_user(self, identifier, password, **kwargs):
-        user = self.get_user(identifier)
+    def validate_user(self, user, password, **kwargs):
+        user = self.get_user(user)
         valid=False
         new_hash=None
         if user:

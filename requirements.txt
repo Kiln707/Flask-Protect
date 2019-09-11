@@ -2,4 +2,3 @@ Flask
 flask_wtf
 passlib
 wtforms
-flask_login

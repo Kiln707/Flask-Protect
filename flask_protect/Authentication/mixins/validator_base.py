@@ -13,9 +13,9 @@ class ValidatorMixin():
     #
     # User Functions
     #
-    def get_user(self, identifier):
+    def validate_user(self, user, password):
         raise NotImplementedError()
-
+        
     def change_user_password(self, identifier, current_password, new_password):
         raise NotImplementedError()
 
@@ -44,7 +44,10 @@ class ValidatorMixin():
     #
     def create_user(self, **kwargs):
         return self._datastore.create_user(**kwargs)
-        
+
+    def get_user(self, **kwargs):
+        return self._datastore.get_user(**kwargs)
+
     def login_user(self, user, remember=False, duration=None, force=False, fresh=True):
         self._login_manager.login_user(user=user, remember=remember, duration=duration, force=force, fresh=fresh)
 
