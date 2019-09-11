@@ -1,5 +1,3 @@
-
-
 def test_imports():
     from flask_protect import Protect, url_for_protect, safe_url, _protect
     from flask_protect.utils import get_within_delta
@@ -188,6 +186,7 @@ def test_get_config_with_incomplete_config():
 class User_Model():
     def __init__(self, id, identifier, password):
         self.id=id
+        self.identifier = identifier
         self.password=password
 
 from flask_protect.Datastore import UserDatastoreMixin
@@ -225,6 +224,11 @@ class TestValidator(ValidatorMixin):
     def __init__(self, datastore, login_manager=None, **kwargs):
         super().__init__(datastore, login_manager, **kwargs)
 
+    def validate_user(self, user, password):
+        if user and user.password == password:
+            return True
+        return False
+
     def change_user_password(self, identifier, current_password, new_password):
         user = self._datastore.get_user(identifier)
         if user.password == current_password:
@@ -245,6 +249,9 @@ class TestValidator(ValidatorMixin):
     def get_defaults(self):
         return self.__DEFAULT_CONFIG.copy()
 
+    def route(self):
+        assert True
+
     def routes(self, blueprint):
         blueprint.add_url_rule(rule='/route', endpoint='route', view_func=self.route)
 
@@ -259,6 +266,10 @@ def test_initialize_validator():
     validator = TestValidator(datastore)
     protect = Protect(app=app, validator=validator)
 
+#
+#   Config Tests
+#
+
 def test_validator_configuration():
     from flask import Flask
     app = Flask(__name__)
@@ -270,7 +281,6 @@ def test_validator_configuration():
     datastore = UserDatastoreMixin(User_Model)
     validator = TestValidator(datastore)
     protect = Protect(app=app, validator=validator)
-    print(protect.validator._config)
     for key, value in defaults.items():
         assert protect.validator._config[key] == value
 
@@ -334,6 +344,10 @@ def test_validator_config_with_incomplete_config():
     for key, value in defaults.items():
         assert protect.validator.get_config(key) == value
 
+#
+#   Functions
+#
+
 def test_validator_create_user():
     from flask import Flask
     from flask_protect import Protect, url_for_protect
@@ -347,3 +361,58 @@ def test_validator_create_user():
     assert len(datastore.users) == 0
     protect.validator.create_user(identifier='test_user', password='password')
     assert len(datastore.users) == 1
+
+def test_validator_get_user():
+    from flask import Flask
+    from flask_protect import Protect, url_for_protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+    user = protect.validator.create_user(identifier='test_user', password='password')
+    test_user = protect.validator.get_user(id=user.id)
+    assert test_user == user
+    assert test_user.id == user.id
+    assert test_user.identifier == user.identifier
+    assert test_user.password == user.password
+
+def test_validator_validate_user_correct_pass():
+    from flask import Flask
+    from flask_protect import Protect, url_for_protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+    user = protect.validator.create_user(identifier='test_user', password='password')
+    assert protect.validator.validate_user(user, 'password')
+
+def test_validator_validate_user_incorrect_pass():
+    from flask import Flask
+    from flask_protect import Protect, url_for_protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+    user = protect.validator.create_user(identifier='test_user', password='password')
+    assert not protect.validator.validate_user(user, 'bad_password')
+
+def test_validator_login_user():
+    from flask import Flask
+    from flask_protect import Protect, url_for_protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+    protect.validator.create_user(identifier='test_user', password='password')
+
+    user = protect.validator.get_user(identifier='test_user')
+    assert protect.validator.validate_user(user, 'password')
+    protect.validator.login_user(user)
