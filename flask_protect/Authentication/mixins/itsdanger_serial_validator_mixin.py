@@ -1,7 +1,7 @@
 from itsdangerous import URLSafeTimedSerializer
 
 from .validator_base import ValidatorMixin
-from ...utils import get_within_delta
+from ..utils import get_within_delta
 
 class SerializingValidatorMixin(ValidatorMixin):
     def __init__(self, datastore, login_manager=None, serializers={}, **kwargs):
