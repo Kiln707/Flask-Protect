@@ -2,7 +2,7 @@ from flask import render_template, redirect, current_app
 from werkzeug import LocalProxy
 from .mixins import SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin
 from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm, ForgotPasswordForm, ResetPasswordForm, ChangePasswordForm, ConfirmEmailForm
-from ..utils import _protect, safe_url, set_request_next, url_for_protect, get_redirect_url, get_request_form
+from ..utils import _protect, safe_url, url_for_protect, get_redirect_url, get_request_form
 from ..Session import FLogin_Manager
 import os
 
