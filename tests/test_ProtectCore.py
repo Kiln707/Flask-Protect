@@ -1,6 +1,5 @@
 def test_imports():
     from flask_protect import Protect, url_for_protect, safe_url, _protect
-    from flask_protect.utils import get_within_delta
 
 #
 #   Without Flask
@@ -195,11 +194,15 @@ class UserDatastoreMixin():
         self.UserModel = user_model
         self.users = []
 
-    def get_user(self, id):
-        if isinstance(id, self.UserModel):
-            return id
-        elif 0 <= id < len(self.users):
-            return self.users[id]
+    def get_user(self, **kwargs):
+        if 'id' in kwargs:
+            return self.users[kwargs['id']]
+        elif 'identifier' in kwargs:
+            for user in self.users:
+                if user.identifier == kwargs['identifier']:
+                    return user
+        elif 'user' in kwargs:
+            return kwargs['user']
         return None
 
     def create_user(self, **kwargs):
@@ -209,7 +212,7 @@ class UserDatastoreMixin():
         return newUser
 
     def set_user_password(self, id, newPassword):
-        user = self.get_user(id)
+        user = self.get_user(user = id)
         user.password = newPassword
 
 
@@ -235,7 +238,7 @@ class TestValidator(ValidatorMixin):
             self.reset_user_password(user)
 
     def reset_user_password(self, identifier, new_password):
-        self._datastore.set_user_password(identifier)
+        self._datastore.set_user_password(identifier, new_password)
 
     def login_user(self, user=None):
         session['user_id'] = user.id
@@ -350,7 +353,7 @@ def test_validator_config_with_incomplete_config():
 
 def test_validator_create_user():
     from flask import Flask
-    from flask_protect import Protect, url_for_protect
+    from flask_protect import Protect
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'change-me'
 
@@ -364,7 +367,7 @@ def test_validator_create_user():
 
 def test_validator_get_user():
     from flask import Flask
-    from flask_protect import Protect, url_for_protect
+    from flask_protect import Protect
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'change-me'
 
@@ -380,7 +383,7 @@ def test_validator_get_user():
 
 def test_validator_validate_user_correct_pass():
     from flask import Flask
-    from flask_protect import Protect, url_for_protect
+    from flask_protect import Protect
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'change-me'
 
@@ -392,7 +395,7 @@ def test_validator_validate_user_correct_pass():
 
 def test_validator_validate_user_incorrect_pass():
     from flask import Flask
-    from flask_protect import Protect, url_for_protect
+    from flask_protect import Protect
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'change-me'
 
@@ -402,9 +405,9 @@ def test_validator_validate_user_incorrect_pass():
     user = protect.validator.create_user(identifier='test_user', password='password')
     assert not protect.validator.validate_user(user, 'bad_password')
 
-def test_validator_login_user():
+def test_validator_login_and_logout_user():
     from flask import Flask
-    from flask_protect import Protect, url_for_protect
+    from flask_protect import Protect
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'change-me'
 
@@ -413,6 +416,82 @@ def test_validator_login_user():
     protect = Protect(app=app, validator=validator)
     protect.validator.create_user(identifier='test_user', password='password')
 
-    user = protect.validator.get_user(identifier='test_user')
-    assert protect.validator.validate_user(user, 'password')
-    protect.validator.login_user(user)
+    with app.test_client() as client:
+        with app.test_request_context():
+            user = protect.validator.get_user(identifier='test_user')
+            assert protect.validator.validate_user(user, 'password')
+            protect.validator.login_user(user)
+            assert 'user_id' in session and session['user_id'] == user.id
+            assert protect.validator.user_logged_in()
+            protect.validator.logout_user()
+            assert 'user_id' not in session
+
+def test_validator_change_user_password():
+    from flask import Flask
+    from flask_protect import Protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+    protect.validator.create_user(identifier='test_user', password='password')
+
+    with app.test_client() as client:
+        with app.test_request_context():
+            user = protect.validator.get_user(identifier='test_user')
+            assert user.password == 'password'
+            protect.validator.change_user_password(user, 'password', 'new_password')
+            assert user.password == 'new_password'
+
+def test_validator_change_user_password():
+    from flask import Flask
+    from flask_protect import Protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+    protect.validator.create_user(identifier='test_user', password='password')
+
+    with app.test_client() as client:
+        with app.test_request_context():
+            user = protect.validator.get_user(identifier='test_user')
+            assert user.password == 'password'
+            protect.validator.reset_user_password(user, 'new_password')
+            assert user.password == 'new_password'
+
+#
+#   Protect Utility tests
+#
+def test_protect_url_for():
+    from flask import Flask
+    from flask_protect import Protect, url_for_protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+
+    with app.test_client() as client:
+        with app.test_request_context():
+            assert protect.url_for('route') == '/route'
+            assert url_for_protect('route') == '/route'
+
+def test_get_url():
+    from flask import Flask, url_for
+    from flask_protect import Protect
+    from flask_protect.utils import get_url
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+
+    with app.test_client() as client:
+        with app.test_request_context():
+            assert get_url('protect.route') == '/route'
+            assert get_url('https://www.google.com') == 'https://www.google.com'
