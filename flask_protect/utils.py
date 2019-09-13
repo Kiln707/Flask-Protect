@@ -1,4 +1,4 @@
-from flask import current_app, request, session, after_this_request
+from flask import current_app, request, session, after_this_request, url_for
 from werkzeug.local import LocalProxy
 
 import datetime
@@ -8,7 +8,7 @@ from ._compat import urlsplit
 
 _protect = LocalProxy(lambda: current_app.extensions['protect'])
 
-url_for_protect = LocalProxy(lambda: _protect.url_for_protect)
+url_for_protect = LocalProxy(lambda: _protect.url_for)
 
 def get_url(endpoint_or_url):
     try:
@@ -37,7 +37,7 @@ def set_cookie_next(next_url):
     after_this_request(_clear_cookie_next)
 
 def set_request_next(next_url):
-    setattr(request.args, 'next', next_url)
+    request.args['next'] = next_url
 
 def get_request_form():
     return request.form
@@ -48,14 +48,16 @@ def _get_cookie_next():
     return None
 
 def _get_request_args_next():
-    if request.args and hasattr(request.args, 'next'):
-        return getattr(request.args, 'next')
-    return None
+    try:
+        return request.args['next']
+    except:
+        return None
 
 def _get_request_form_next():
-    if request.form and hasattr(request.form, 'next'):
-        return getattr(request.form, 'next')
-    return None
+    try:
+        return request.form['next']
+    except:
+        return None
 
 def get_redirect_url(default, additional_urls=[]):
     urls = [
@@ -70,16 +72,3 @@ def get_redirect_url(default, additional_urls=[]):
         if safe_url(url):
             return url
     return None
-
-
-#
-#   TimeDelta utils
-#
-def get_within_delta(time):
-    if isinstance(time, datetime.timedelta):
-        return time.seconds + time.days * 24 * 3600
-    elif str(time):
-        values = time.split()
-        td = timedelta(**{values[1]: int(values[0])})
-        return td.seconds + td.days * 24 * 3600
-    raise TypeError()
