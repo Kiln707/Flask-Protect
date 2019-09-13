@@ -256,7 +256,8 @@ class TestValidator(ValidatorMixin):
         assert True
 
     def test_redirect_route(self):
-        pass
+        from flask_protect.utils import get_redirect_url
+        return get_redirect_url('/')
 
     def routes(self, blueprint):
         blueprint.add_url_rule(rule='/route', endpoint='route', view_func=self.route)
@@ -521,7 +522,7 @@ def test_safe_url():
 def test_cookie_next():
     from flask import Flask
     from flask_protect import Protect
-    from flask_protect.utils import set_cookie_next, get_cookie_next, _clear_cookie_next, get_url
+    from flask_protect.utils import set_cookie_next, get_cookie_next, clear_cookie_next, get_url
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'change-me'
 
@@ -534,7 +535,7 @@ def test_cookie_next():
             assert get_cookie_next() == None
             set_cookie_next(get_url('protect.route'))
             assert get_cookie_next() == '/route'
-            _clear_cookie_next()
+            clear_cookie_next()
             assert get_cookie_next() == None
 
 def test_request_withno_next():
@@ -551,3 +552,19 @@ def test_request_withno_next():
     with app.test_client() as client:
         with app.test_request_context():
             assert get_request_next() == None
+
+def test_client():
+    from flask import Flask
+    from flask_protect import Protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+
+    with app.test_client() as client:
+        with app.test_request_context():
+            from flask_protect.utils import set_cookie_next
+            print(client.get('/redirect'))
+            assert client.get('/redirect') == '/'
