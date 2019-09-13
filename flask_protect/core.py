@@ -58,7 +58,7 @@ class Protect(object):
                 self.__DEFAULT_CORE_CONFIG[key]) or self.__DEFAULT_CORE_CONFIG[key]
         return self._config.get(key, self.__DEFAULT_CORE_CONFIG[key]) or self.__DEFAULT_CORE_CONFIG[key]
 
-    def url_for_protect(self, endpoint, **kwargs):
+    def url_for(self, endpoint, **kwargs):
         # Return a URL for Protect blueprint
         endpoint = '%s.%s' % (self.get_config('BLUEPRINT_NAME'), endpoint)
         return url_for(endpoint, **kwargs)
