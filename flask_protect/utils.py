@@ -31,12 +31,12 @@ def safe_url(url):
 #
 
 #   Cookie Next
-def _clear_cookie_next():
+def clear_cookie_next():
     session.pop('next', None)
 
 def set_cookie_next(next_url):
     session['next'] = next_url
-    after_this_request(_clear_cookie_next)
+    after_this_request(clear_cookie_next)
 
 def get_cookie_next():
     if 'next' in session:
