@@ -257,7 +257,11 @@ class TestValidator(ValidatorMixin):
 
     def test_redirect_route(self):
         from flask_protect.utils import get_redirect_url
-        return get_redirect_url('/')
+        print(get_redirect_url('/'))
+        try:
+            return get_redirect_url('/')
+        except Exception as e:
+            print(e)
 
     def routes(self, blueprint):
         blueprint.add_url_rule(rule='/route', endpoint='route', view_func=self.route)
@@ -564,7 +568,10 @@ def test_client():
     protect = Protect(app=app, validator=validator)
 
     with app.test_client() as client:
-        with app.test_request_context():
-            from flask_protect.utils import set_cookie_next
-            print(client.get('/redirect'))
-            assert client.get('/redirect') == '/'
+        with app.app_context():
+            with app.test_request_context('/redirect'):
+                from flask_protect.utils import get_redirect_url
+                #print(get_redirect_url('/'))   #Works!
+                from flask_protect.utils import set_cookie_next
+                print(client.get('/redirect').data) #Does not work!
+                assert False

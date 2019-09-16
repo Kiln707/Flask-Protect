@@ -63,7 +63,7 @@ def get_request_form_next():
 def get_redirect_url(default, additional_urls=[]):
     urls = [
         get_url(get_cookie_next()),
-        get_url(get_request_args_next()),
+        get_url(get_request_next()),
         get_url(get_request_form_next()),
         get_url(default)
     ]
