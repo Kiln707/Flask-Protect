@@ -1,5 +1,5 @@
 def test_imports():
-    from flask_protect import Protect, url_for_protect, safe_url, _protect
+    from flask_protect import Protect, url_for_protect, is_safe_url, _protect
 
 #
 #   Without Flask
@@ -257,19 +257,34 @@ class TestValidator(ValidatorMixin):
         return 'Hi'
 
     def test_redirect_route(self):
-        from flask_protect.utils import get_redirect_url, set_session_next, get_request_next, get_request_form_next
+        from flask_protect.utils import get_redirect_url, set_session_next, get_session_next, get_request_next, get_request_form_next
         if get_request_next():
             assert get_redirect_url('/') == get_request_next()
-            set_session_next('www.google.com')
-            assert get_redirect_url('/') == 'www.google.com'
+            set_session_next('https://www.google.com')
+            assert get_session_next(save=True) == 'https://www.google.com'
+            assert get_redirect_url('/') != 'https://www.google.com'
+            set_session_next('/redirect')
+            assert get_session_next(save=True) == '/redirect'
+            assert get_redirect_url('/') == '/redirect'
+            assert get_redirect_url('/') == get_request_next()
         elif get_request_form_next():
             assert get_redirect_url('/') == get_request_form_next()
-            set_session_next('www.google.com')
-            assert get_redirect_url('/') == 'www.google.com'
+            set_session_next('https://www.google.com')
+            assert get_session_next(save=True) == 'https://www.google.com'
+            assert get_redirect_url('/') != 'https://www.google.com'
+            set_session_next('/redirect')
+            assert get_session_next(save=True) == '/redirect'
+            assert get_redirect_url('/') == '/redirect'
+            assert get_redirect_url('/') == get_request_form_next()
         else:
             assert get_redirect_url('/') == '/'
-            set_session_next('www.google.com')
-            assert get_redirect_url('/') == 'www.google.com'
+            set_session_next('https://www.google.com')
+            assert get_session_next(save=True) == 'https://www.google.com'
+            assert get_redirect_url('/') != 'https://www.google.com'
+            set_session_next('/redirect')
+            assert get_session_next(save=True) == '/redirect'
+            assert get_redirect_url('/') == '/redirect'
+            assert get_redirect_url('/') == '/'
         return 'True'
 
     def routes(self, blueprint):
@@ -517,7 +532,7 @@ def test_get_url():
 def test_safe_url():
     from flask import Flask
     from flask_protect import Protect
-    from flask_protect.utils import safe_url
+    from flask_protect.utils import is_safe_url
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'change-me'
 
@@ -527,10 +542,50 @@ def test_safe_url():
 
     with app.test_client() as client:
         with app.test_request_context():
-            assert safe_url('protect.route')
-            assert not safe_url('https://www.google.com')
-            assert not safe_url('       ')
-            assert not safe_url(None)
+            assert is_safe_url('protect.route')
+            assert is_safe_url('https://www.google.com')
+            assert is_safe_url('https://google.com')
+            assert is_safe_url('http://www.google.com')
+            assert is_safe_url('http://google.com')
+            assert is_safe_url('www.google.com')
+            assert is_safe_url('google.com')
+            assert is_safe_url('https://username:password@www.google.com')
+            assert is_safe_url('https://username:password@google.com')
+            assert is_safe_url('http://username:password@www.google.com')
+            assert is_safe_url('http://username:password@google.com')
+            assert is_safe_url('username:password@www.google.com')
+            assert is_safe_url('username:password@google.com')
+            assert is_safe_url('https://www.google.com/test')
+            assert is_safe_url('https://google.com/test')
+            assert is_safe_url('http://www.google.com/test')
+            assert is_safe_url('http://google.com/test')
+            assert is_safe_url('www.google.com/test')
+            assert is_safe_url('google.com/test')
+            assert is_safe_url('https://username:password@www.google.com/test')
+            assert is_safe_url('https://username:password@google.com/test')
+            assert is_safe_url('http://username:password@www.google.com/test')
+            assert is_safe_url('http://username:password@google.com/test')
+            assert is_safe_url('username:password@www.google.com/test')
+            assert is_safe_url('username:password@google.com/test')
+
+            assert is_safe_url('https:///www.google.com')
+            assert is_safe_url('https:///google.com')
+            assert is_safe_url('http:///www.google.com')
+            assert is_safe_url('http:///google.com')
+            assert is_safe_url('https:///username:password@www.google.com')
+            assert is_safe_url('https:///username:password@google.com')
+            assert is_safe_url('http:///username:password@www.google.com')
+            assert is_safe_url('http:///username:password@google.com')
+            assert is_safe_url('https:///www.google.com/test')
+            assert is_safe_url('https:///google.com/test')
+            assert is_safe_url('http:///www.google.com/test')
+            assert is_safe_url('http:///google.com/test')
+            assert is_safe_url('https:///username:password@www.google.com/test')
+            assert is_safe_url('https:///username:password@google.com/test')
+            assert is_safe_url('http:///username:password@www.google.com/test')
+            assert is_safe_url('http:///username:password@google.com/test')
+            assert is_safe_url('       ')
+            assert is_safe_url(None)
 
 def test_session_next():
     from flask import Flask
