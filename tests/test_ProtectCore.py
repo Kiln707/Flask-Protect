@@ -254,18 +254,27 @@ class TestValidator(ValidatorMixin):
 
     def route(self):
         assert True
+        return 'Hi'
 
     def test_redirect_route(self):
-        from flask_protect.utils import get_redirect_url
-        print(get_redirect_url('/'))
-        try:
-            return get_redirect_url('/')
-        except Exception as e:
-            print(e)
+        from flask_protect.utils import get_redirect_url, set_session_next, get_request_next, get_request_form_next
+        if get_request_next():
+            assert get_redirect_url('/') == get_request_next()
+            set_session_next('www.google.com')
+            assert get_redirect_url('/') == 'www.google.com'
+        elif get_request_form_next():
+            assert get_redirect_url('/') == get_request_form_next()
+            set_session_next('www.google.com')
+            assert get_redirect_url('/') == 'www.google.com'
+        else:
+            assert get_redirect_url('/') == '/'
+            set_session_next('www.google.com')
+            assert get_redirect_url('/') == 'www.google.com'
+        return 'True'
 
     def routes(self, blueprint):
         blueprint.add_url_rule(rule='/route', endpoint='route', view_func=self.route)
-        blueprint.add_url_rule(rule='/redirect', endpoint='test_redirect_route', view_func=self.route)
+        blueprint.add_url_rule(rule='/redirect', endpoint='test_redirect_route', view_func=self.test_redirect_route)
 
 
 def test_initialize_validator():
@@ -523,10 +532,10 @@ def test_safe_url():
             assert not safe_url('       ')
             assert not safe_url(None)
 
-def test_cookie_next():
+def test_session_next():
     from flask import Flask
     from flask_protect import Protect
-    from flask_protect.utils import set_cookie_next, get_cookie_next, clear_cookie_next, get_url
+    from flask_protect.utils import set_session_next, get_session_next, get_url
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'change-me'
 
@@ -536,11 +545,10 @@ def test_cookie_next():
 
     with app.test_client() as client:
         with app.test_request_context():
-            assert get_cookie_next() == None
-            set_cookie_next(get_url('protect.route'))
-            assert get_cookie_next() == '/route'
-            clear_cookie_next()
-            assert get_cookie_next() == None
+            assert get_session_next() == None
+            set_session_next(get_url('protect.route'))
+            assert get_session_next() == '/route'
+            assert get_session_next() == None
 
 def test_request_withno_next():
     from flask import Flask
@@ -557,7 +565,7 @@ def test_request_withno_next():
         with app.test_request_context():
             assert get_request_next() == None
 
-def test_client():
+def test_get_redirect_no_request():
     from flask import Flask
     from flask_protect import Protect
     app = Flask(__name__)
@@ -568,10 +576,47 @@ def test_client():
     protect = Protect(app=app, validator=validator)
 
     with app.test_client() as client:
-        with app.app_context():
-            with app.test_request_context('/redirect'):
-                from flask_protect.utils import get_redirect_url
-                #print(get_redirect_url('/'))   #Works!
-                from flask_protect.utils import set_cookie_next
-                print(client.get('/redirect').data) #Does not work!
-                assert False
+        with app.app_context() as ctx:
+            ctx.push()
+            response = client.get('/redirect')
+            assert response.status_code == 200
+            assert response.data == b'True'
+            ctx.pop()
+
+def test_get_redirect_request_next():
+    from flask import Flask
+    from flask_protect import Protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+
+    request = {'next': '/redirect'}
+    with app.test_client() as client:
+        with app.app_context() as ctx:
+            ctx.push()
+            response = client.get('/redirect', query_string=request)
+            assert response.status_code == 200
+            assert response.data == b'True'
+            ctx.pop()
+
+def test_get_redirect_request_form_next():
+    from flask import Flask
+    from flask_protect import Protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+
+    request = {'next': '/redirect'}
+    with app.test_client() as client:
+        with app.app_context() as ctx:
+            ctx.push()
+            response = client.get('/redirect', content_type='multipart/form-data', data=request)
+            assert response.status_code == 200
+            assert response.data == b'True'
+            ctx.pop()
