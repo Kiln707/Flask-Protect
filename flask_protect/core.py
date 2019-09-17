@@ -2,9 +2,6 @@ from builtins import object
 from flask import current_app, Blueprint, url_for
 from werkzeug.local import LocalProxy
 
-from .utils import safe_url
-
-
 class Protect(object):
     __DEFAULT_CORE_CONFIG = {
         # Basic Functionality
