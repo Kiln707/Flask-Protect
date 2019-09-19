@@ -19,9 +19,7 @@ tests_require = [
 install_requires = [
     'Flask',
     'flask_wtf',
-    'passlib',
     'wtforms',
-    'flask_login',
     'netifaces',
 ]
 

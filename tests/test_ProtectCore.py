@@ -1648,21 +1648,3 @@ def test_get_redirect_request_form_next():
             assert response.status_code == 200
             assert response.data == b'True'
             ctx.pop()
-
-def test_get_redirect_no_request():
-    from flask import Flask
-    from flask_protect import Protect
-    app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'change-me'
-
-    datastore = UserDatastoreMixin(User_Model)
-    validator = TestValidator(datastore)
-    protect = Protect(app=app, validator=validator)
-
-    with app.test_client() as client:
-        with app.app_context() as ctx:
-            ctx.push()
-            response = client.get('/redirect')
-            assert response.status_code == 200
-            assert response.data == b'True'
-            ctx.pop()
