@@ -97,10 +97,11 @@ class UnsafeURLError(Exception):
 
 def is_safe_url(url, allowed_hosts=[], require_https=False, allow_userpass=False, allowed_schemes=['http', 'https'], pass_Exception=False):
     def iphostname_in_allowed_hosts(hostname=[]):
+        ip = ip_address(hostname[len(hostname)-1])
         for allowhost in allowed_hosts:
             allowhost = allowhost.split('.')
             end = len(allowhost)-1
-            if not valid_ipv4(allowhost[end]) or valid_ipv6(allowhost[end]): #only check ipaddresses
+            if not ( valid_ipv4(allowhost[end]) or valid_ipv6(allowhost[end]) ): #only check ipaddresses
                 continue
             allowhost[end] = ip_address(allowhost[end])
             if allowhost[end] != ip:    #If the ipaddress is not correct, dont bother checking it all
@@ -126,7 +127,6 @@ def is_safe_url(url, allowed_hosts=[], require_https=False, allow_userpass=False
             url_info = urlparse(url)
         except ValueError:  # e.g. invalid IPv6 addresses
             return (False, UnsafeURLError(3)) if pass_Exception else False
-        #print(url_info)
         # Forbid URLs like http:///example.com - with a scheme, but without a hostname.
         if not url_info.netloc and url_info.scheme:
             return (False, UnsafeURLError(4)) if pass_Exception else False
@@ -199,14 +199,6 @@ def is_safe_url(url, allowed_hosts=[], require_https=False, allow_userpass=False
                     else:
                         if hostname == str(ip) or hostname == str(ip.exploded):
                             return (True, None) if pass_Exception else True
-                            #
-                            # try:
-                            #     hostname = ip_address(hostname)
-                            #     print(hostname, localip, hostname == localip)
-                            #     if hostname == localip:
-                            #         return (True, None) if pass_Exception else True
-                            # except ValueError:
-                            #     pass
                         # If we find that the hostname IP Address matches one of localhosts ip addresses
                         # then we will check to see if it matches a hostname with that IPaddress with
                         # listed subdomains
@@ -219,7 +211,6 @@ def is_safe_url(url, allowed_hosts=[], require_https=False, allow_userpass=False
                 if iphostname_in_allowed_hosts(netloc_split):
                     # If match is found, then subdomain @ ipaddress is authorized
                     return (True, None) if pass_Exception else True
-            # print(hostname, hostname in allowed_hosts)
             return (False, UnsafeURLError(9)) if pass_Exception else False
         # Relative Path is safe
         return (True, None) if pass_Exception else True
@@ -274,8 +265,8 @@ def get_redirect_url(default, additional_urls=[]):
         get_url(get_request_form_next()),
         get_url(default)
     ]
-    if additional_urls:
-        urls.insert(0, additional_urls)
+    for url in additional_urls:
+        urls.insert(0,url)
     for url in urls:
         if is_safe_url(url):
             return url
