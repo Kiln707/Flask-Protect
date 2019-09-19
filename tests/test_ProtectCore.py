@@ -285,6 +285,8 @@ class TestValidator(ValidatorMixin):
             assert get_session_next(save=True) == '/redirect'
             assert get_redirect_url('/') == '/redirect'
             assert get_redirect_url('/') == '/'
+            assert get_redirect_url('/', additional_urls=['www.google.com', '/redirect']) == '/redirect'
+            assert get_redirect_url('www.facebook.com', additional_urls=['www.google.com',]) is None
         return 'True'
 
     def routes(self, blueprint):
@@ -1185,6 +1187,10 @@ def test_safe_url():
             # test malformed ip
             assert_safe('https://www.127.0.0.1.2/test', False, expected_code=9)
             assert_safe('https://127.0.0.1.2/test', False, expected_code=9)
+            assert_safe('https://www.192.168.0.233', False, allowed_hosts=['www.192.168.0.3.233', '192.168.0.3.233'], expected_code=9)
+            assert_safe('https://192.168.0.233', False, allowed_hosts=['www.192.168.0.3.233', '192.168.0.3.233'], expected_code=9)
+            assert_safe('http://www.192.168.0.233', False, allowed_hosts=['www.192.168.0.3.233', '192.168.0.3.233'], expected_code=9)
+            assert_safe('http://192.168.0.233', False, allowed_hosts=['www.192.168.0.3.233', '192.168.0.3.233'], expected_code=9)
             #
             #   Tests with IPv6
             #   2001:0db8:85a3:0000:0000:8a2e:0370:7334
@@ -1518,6 +1524,9 @@ def test_safe_url():
             assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, \
                 allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
                 allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
             assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, \
                 allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
                 allowed_schemes=['http', 'https', 'ftp', 'ftps'])
@@ -1531,11 +1540,25 @@ def test_safe_url():
             assert_safe('https://www.::1', False, expected_code=9)
             assert_safe('https://::1', True)
             assert_safe('http://www.0000:0000:0000:0000:0000:0000:0000:0001', False, expected_code=9)
+            assert_safe('http://www.0000:0000:0000:0000:0000:0000:0000:0001', True, allowed_hosts=['www.::1',])
             assert_safe('http://0000:0000:0000:0000:0000:0000:0000:0001', True)
-            assert_safe('https://www.2001::7334', True, allowed_hosts=['www.2001::7334', '2001::7334'])
-            assert_safe('https://2001::7334', True, allowed_hosts=['www.2001::7334', '2001::7334'])
-            assert_safe('http://www.2001::7334', True, allowed_hosts=['www.2001::7334', '2001::7334'])
-            assert_safe('http://2001::7334', True, allowed_hosts=['www.2001::7334', '2001::7334'])
+            assert_safe('https://www.2001::7334', True, \
+                allowed_hosts=['www.2001:0000:0000:0000:0000:0000:0000:7334', '2001:0000:0000:0000:0000:0000:0000:7334'])
+            assert_safe('https://2001::7334', True, allowed_hosts=['www.2001:0000:0000:0000:0000:0000:0000:7334', '2001:0000:0000:0000:0000:0000:0000:7334'])
+            assert_safe('http://www.2001::7334', True, \
+                allowed_hosts=['www.2001:0000:0000:0000:0000:0000:0000:7334', '2001:0000:0000:0000:0000:0000:0000:7334'])
+            assert_safe('http://2001::7334', True, allowed_hosts=['www.2001:0000:0000:0000:0000:0000:0000:7334', '2001:0000:0000:0000:0000:0000:0000:7334'])
+            assert_safe('https://www.2001::7335', False, allowed_hosts=['www.2001::7334', '2001::7334'], expected_code=9)
+            assert_safe('https://2001::73345', False, allowed_hosts=['www.2001::7334', '2001::7334'], expected_code=9)
+            assert_safe('http://www.2001::7335', False, allowed_hosts=['www.2001::7334', '2001::7334'], expected_code=9)
+            assert_safe('http://2001::7335', False, allowed_hosts=['www.2001::7334', '2001::7334'], expected_code=9)
+
+            assert_safe('http://www.eu.2001::7334', False, allowed_hosts=['www.us.2001::7334', '2001::7334'], expected_code=9)
+            #Malformed ipv6
+            assert_safe('http://www.20V1::7334', False, allowed_hosts=['www.20V1::7334', '20V1::7334'], expected_code=9)
+            assert_safe('http://20V1::7334', False, allowed_hosts=['www.20V1::7334', '20V1::7334'], expected_code=9)
+            assert_safe('http://www.2001::7334', False, allowed_hosts=['www.20V1::7334', '20V1::7334'], expected_code=9)
+            assert_safe('http://2001::7334', False, allowed_hosts=['www.20V1::7334', '20V1::7334'], expected_code=9)
 
 def test_session_next():
     from flask import Flask
@@ -1622,6 +1645,24 @@ def test_get_redirect_request_form_next():
         with app.app_context() as ctx:
             ctx.push()
             response = client.get('/redirect', content_type='multipart/form-data', data=request)
+            assert response.status_code == 200
+            assert response.data == b'True'
+            ctx.pop()
+
+def test_get_redirect_no_request():
+    from flask import Flask
+    from flask_protect import Protect
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'change-me'
+
+    datastore = UserDatastoreMixin(User_Model)
+    validator = TestValidator(datastore)
+    protect = Protect(app=app, validator=validator)
+
+    with app.test_client() as client:
+        with app.app_context() as ctx:
+            ctx.push()
+            response = client.get('/redirect')
             assert response.status_code == 200
             assert response.data == b'True'
             ctx.pop()
