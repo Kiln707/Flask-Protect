@@ -558,11 +558,12 @@ def test_safe_url():
             assert_safe('<>`^', False, expected_code=1)
             # starts with invalid unicode character
             assert_safe(u"\U000F0000", False, expected_code=5)
-
+            #No Url
+            assert_safe('       ', False, expected_code=0)
+            assert_safe(None, False, expected_code=0)
             #
             #   Tests with hostname
             #
-
             # common URLs
             # Should fail due to not allowed hostname
             assert_safe('https://www.google.com', False, expected_code=9)
@@ -750,80 +751,148 @@ def test_safe_url():
             assert_safe('ftp://username:password@google.com/test', False, \
                 allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
             # Allow certain outside urls AND Userpass NOT FTP
-            assert_safe('https://www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('https://google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('https://www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('https://facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('https://username:password@www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('https://username:password@google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://username:password@www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://username:password@google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
-            assert_safe('username:password@www.google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=4)
-            assert_safe('username:password@google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=4)
-            assert_safe('ftps://www.google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://www.google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@www.google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@www.google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://www.google.com/test', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://google.com/test', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://www.google.com/test', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://google.com/test', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@www.google.com/test', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@google.com/test', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@www.google.com/test', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@google.com/test', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('https://www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('https://google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('https://www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('https://facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('https://username:password@www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('https://username:password@google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://username:password@www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://username:password@google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'])
+            assert_safe('username:password@www.google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=4)
+            assert_safe('username:password@google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=4)
+            assert_safe('ftps://www.google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://www.google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@www.google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@www.google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://www.google.com/test', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://google.com/test', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://www.google.com/test', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://google.com/test', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@www.google.com/test', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@google.com/test', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@www.google.com/test', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@google.com/test', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], expected_code=7)
             # Allow certain outside urls AND Userpass NOT FTP
-            assert_safe('https://www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('facebook.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://username:password@www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://username:password@google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://username:password@www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://username:password@google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('username:password@www.google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
-            assert_safe('username:password@google.com', False, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
-            assert_safe('ftps://www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@www.google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@google.com', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://www.google.com/test', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://google.com/test', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://www.google.com/test', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://google.com/test', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@www.google.com/test', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@google.com/test', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@www.google.com/test', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@google.com/test', True, allow_userpass=True, allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-
+            assert_safe('https://www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://username:password@www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://username:password@google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://username:password@www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://username:password@google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('username:password@www.google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], \
+                expected_code=4)
+            assert_safe('username:password@google.com', False, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], \
+                expected_code=4)
+            assert_safe('ftps://www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@www.google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@google.com', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://www.google.com/test', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://google.com/test', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://www.google.com/test', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://google.com/test', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@www.google.com/test', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@google.com/test', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@www.google.com/test', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@google.com/test', True, allow_userpass=True, \
+                allowed_hosts=['www.google.com', 'google.com', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
             #
             #   Tests with IPv4
             #   192.168.0.233
-
             # common URLs
             # Should fail due to not allowed hostname
             assert_safe('https://www.192.168.0.233', False, expected_code=9)
@@ -927,104 +996,198 @@ def test_safe_url():
             assert_safe('http://facebook.com', True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
             assert_safe('www.facebook.com', True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
             assert_safe('facebook.com', True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('https://username:password@www.192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=8)
-            assert_safe('https://username:password@192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=8)
-            assert_safe('http://username:password@www.192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=8)
-            assert_safe('http://username:password@192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=8)
-            assert_safe('username:password@www.192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=4)
-            assert_safe('username:password@192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=4)
-            assert_safe('ftps://www.192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://www.192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@www.192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@www.192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@192.168.0.233', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://www.192.168.0.233/test', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://192.168.0.233/test', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://www.192.168.0.233/test', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://192.168.0.233/test', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@www.192.168.0.233/test', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@192.168.0.233/test', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@www.192.168.0.233/test', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@192.168.0.233/test', False, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('https://username:password@www.192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=8)
+            assert_safe('https://username:password@192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=8)
+            assert_safe('http://username:password@www.192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=8)
+            assert_safe('http://username:password@192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=8)
+            assert_safe('username:password@www.192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=4)
+            assert_safe('username:password@192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=4)
+            assert_safe('ftps://www.192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://www.192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@www.192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@www.192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@192.168.0.233', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://www.192.168.0.233/test', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://192.168.0.233/test', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://www.192.168.0.233/test', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://192.168.0.233/test', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@www.192.168.0.233/test', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@192.168.0.233/test', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@www.192.168.0.233/test', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@192.168.0.233/test', False, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
             # Allow certain outside urls AND Userpass NOT FTP
-            assert_safe('https://www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('https://192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('https://www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('https://facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('https://www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('https://192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('https://www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('https://facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
             assert_safe('facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('https://username:password@www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('https://username:password@192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://username:password@www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('http://username:password@192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
-            assert_safe('username:password@www.192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=4)
-            assert_safe('username:password@192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=4)
-            assert_safe('ftps://www.192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://www.192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@www.192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@www.192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://www.192.168.0.233/test', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://192.168.0.233/test', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://www.192.168.0.233/test', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://192.168.0.233/test', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@www.192.168.0.233/test', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftps://username:password@192.168.0.233/test', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@www.192.168.0.233/test', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
-            assert_safe('ftp://username:password@192.168.0.233/test', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('https://username:password@www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('https://username:password@192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://username:password@www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('http://username:password@192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'])
+            assert_safe('username:password@www.192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=4)
+            assert_safe('username:password@192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=4)
+            assert_safe('ftps://www.192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://www.192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@www.192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@www.192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://www.192.168.0.233/test', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://192.168.0.233/test', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://www.192.168.0.233/test', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://192.168.0.233/test', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@www.192.168.0.233/test', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftps://username:password@192.168.0.233/test', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@www.192.168.0.233/test', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
+            assert_safe('ftp://username:password@192.168.0.233/test', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], expected_code=7)
             # Allow certain outside urls AND Userpass NOT FTP
-            assert_safe('https://www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('www.facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('facebook.com', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://username:password@www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://username:password@192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://username:password@www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://username:password@192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('username:password@www.192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
-            assert_safe('username:password@192.168.0.233', False, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
-            assert_safe('ftps://www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@www.192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@192.168.0.233', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://www.192.168.0.233/test', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://192.168.0.233/test', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://www.192.168.0.233/test', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://192.168.0.233/test', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@www.192.168.0.233/test', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@192.168.0.233/test', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@www.192.168.0.233/test', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@192.168.0.233/test', True, allow_userpass=True, allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-
-
+            assert_safe('https://www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('www.facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('facebook.com', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://username:password@www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://username:password@192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://username:password@www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://username:password@192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('username:password@www.192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], \
+                expected_code=4)
+            assert_safe('username:password@192.168.0.233', False, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], \
+                expected_code=4)
+            assert_safe('ftps://www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@www.192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@192.168.0.233', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://www.192.168.0.233/test', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://192.168.0.233/test', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://www.192.168.0.233/test', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://192.168.0.233/test', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@www.192.168.0.233/test', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@192.168.0.233/test', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@www.192.168.0.233/test', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@192.168.0.233/test', True, allow_userpass=True, \
+                allowed_hosts=['www.192.168.0.233', '192.168.0.233', 'www.facebook.com', 'facebook.com'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            # test local ip
+            assert_safe('https://www.127.0.0.1/test', False, expected_code=9) # Fail as subdomain not allowed
+            assert_safe('https://127.0.0.1/test', True)
+            # test malformed ip
+            assert_safe('https://www.127.0.0.1.2/test', False, expected_code=9)
+            assert_safe('https://127.0.0.1.2/test', False, expected_code=9)
             #
             #   Tests with IPv6
             #   2001:0db8:85a3:0000:0000:8a2e:0370:7334
-
             # common URLs
             # Should fail due to not allowed hostname
             assert_safe('https://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, expected_code=9)
@@ -1103,128 +1266,276 @@ def test_safe_url():
             assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
             assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
             assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
-            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
-            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
-            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
-            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
+            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
+            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
+            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
+            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
             assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
             assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
             assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
             assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
-            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
-            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
-            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
-            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
+            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
+            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
+            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
+            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=8)
             # Allow certain outside urls, UserPass should Fail, FTP should Fail
-            assert_safe('https://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('https://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('http://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('http://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
-            assert_safe('2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
-            assert_safe('https://www.facebook.com', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('https://facebook.com', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('http://www.facebook.com', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('http://facebook.com', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('www.facebook.com', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('facebook.com', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('https://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=8)
-            assert_safe('https://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=8)
-            assert_safe('http://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=8)
-            assert_safe('http://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=8)
-            assert_safe('username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
-            assert_safe('username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
-            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('https://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('https://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('http://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('http://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
+            assert_safe('2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
+            assert_safe('https://www.facebook.com', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('https://facebook.com', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('http://www.facebook.com', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('http://facebook.com', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('www.facebook.com', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('facebook.com', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('https://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=8)
+            assert_safe('https://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=8)
+            assert_safe('http://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=8)
+            assert_safe('http://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=8)
+            assert_safe('username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
+            assert_safe('username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
+            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
             # Allow certain outside urls AND Userpass NOT FTP
-            assert_safe('https://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('https://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('http://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('http://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
-            assert_safe('2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
-            assert_safe('https://www.facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('https://facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('http://www.facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('http://facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('www.facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
-            assert_safe('https://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('https://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('http://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('http://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
-            assert_safe('username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
-            assert_safe('username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
-            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
-            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('https://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('https://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('http://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('http://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
+            assert_safe('2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
+            assert_safe('https://www.facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('https://facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('http://www.facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('http://facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('www.facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=9)
+            assert_safe('https://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('https://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('http://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('http://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'])
+            assert_safe('username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
+            assert_safe('username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=4)
+            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
+            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], expected_code=7)
             # Allow certain outside urls AND Userpass NOT FTP
-            assert_safe('https://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
-            assert_safe('2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
-            assert_safe('https://www.facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
-            assert_safe('https://facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
-            assert_safe('http://www.facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
-            assert_safe('http://facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
-            assert_safe('www.facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
-            assert_safe('facebook.com', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
-            assert_safe('https://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('https://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('http://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
-            assert_safe('username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
-            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], allowed_schemes=['http', 'https', 'ftp', 'ftps'])
-
-
-
-            assert is_safe_url('       ')
-            assert is_safe_url(None)
+            assert_safe('https://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
+            assert_safe('2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
+            assert_safe('https://www.facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
+            assert_safe('https://facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
+            assert_safe('http://www.facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
+            assert_safe('http://facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
+            assert_safe('www.facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
+            assert_safe('facebook.com', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=9)
+            assert_safe('https://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('https://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('http://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
+            assert_safe('username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', False, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'], expected_code=4)
+            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftps://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@www.2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            assert_safe('ftp://username:password@2001:0db8:85a3:0000:0000:8a2e:0370:7334/test', True, allow_userpass=True, \
+                allowed_hosts=['www.2001:0db8:85a3:0000:0000:8a2e:0370:7334', '2001:0db8:85a3:0000:0000:8a2e:0370:7334'], \
+                allowed_schemes=['http', 'https', 'ftp', 'ftps'])
+            # Test Local IP and different ipv6 formats
+            assert_safe('https://www.::1', False, expected_code=9)
+            assert_safe('https://::1', True)
+            assert_safe('http://www.0000:0000:0000:0000:0000:0000:0000:0001', False, expected_code=9)
+            assert_safe('http://0000:0000:0000:0000:0000:0000:0000:0001', True)
+            assert_safe('https://www.2001::7334', True, allowed_hosts=['www.2001::7334', '2001::7334'])
+            assert_safe('https://2001::7334', True, allowed_hosts=['www.2001::7334', '2001::7334'])
+            assert_safe('http://www.2001::7334', True, allowed_hosts=['www.2001::7334', '2001::7334'])
+            assert_safe('http://2001::7334', True, allowed_hosts=['www.2001::7334', '2001::7334'])
 
 def test_session_next():
     from flask import Flask
