@@ -22,6 +22,7 @@ install_requires = [
     'passlib',
     'wtforms',
     'flask_login',
+    'netifaces',
 ]
 
 setup_requires = [
