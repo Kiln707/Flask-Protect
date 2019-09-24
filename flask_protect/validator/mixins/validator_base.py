@@ -1,7 +1,7 @@
 from flask import request
 
 class ValidatorMixin():
-    def __init__(self, datastore, login_manager=None, **kwargs):
+    def __init__(self, datastore, login_manager, **kwargs):
         self._kwargs = kwargs
         self._datastore=datastore
         self._login_manager=login_manager
@@ -15,18 +15,10 @@ class ValidatorMixin():
     #
     def validate_user(self, user, password):
         raise NotImplementedError()
-        
+
     def change_user_password(self, identifier, current_password, new_password):
         raise NotImplementedError()
 
-    def reset_user_password(self, identifier, new_password):
-        raise NotImplementedError()
-
-    def login_user(self, user=None):
-        raise NotImplementedError()
-
-    def logout_user(self):
-        raise NotImplementedError()
     #
     # validator actions
     #
@@ -34,6 +26,9 @@ class ValidatorMixin():
         raise NotImplementedError()
 
     def initialize(self, app, blueprint, **kwargs):
+        pass
+
+    def post_initialization(self):
         pass
 
     ###########################################################################################
@@ -48,11 +43,17 @@ class ValidatorMixin():
     def get_user(self, **kwargs):
         return self._datastore.get_user(**kwargs)
 
+    def set_user_password(self, identifier, new_password):
+        self._datastore.set_user_password(identifier, new_password)
+
     def login_user(self, user, remember=False, duration=None, force=False, fresh=True):
         self._login_manager.login_user(user=user, remember=remember, duration=duration, force=force, fresh=fresh)
 
     def logout_user(self):
         self._login_manager.logout_user()
+
+    def login_user(self, user=None):
+        self._login_manager.login_user(user)
 
     def current_user(self):
         user = self._login_manager.current_user()
@@ -68,11 +69,6 @@ class ValidatorMixin():
     #
     # validator actions
     #
-    def post_initialization(self):
-        if type(self) is not ValidatorMixin:
-            super().post_initialization()
-
-
     def initialize_blueprint(self, app, blueprint, **kwargs):
         self.initialize(app, blueprint, **kwargs)
         self.routes(blueprint)
@@ -92,30 +88,6 @@ class ValidatorMixin():
         if hasattr(self, '__DEFAULT_CONFIG'):
             return self.__DEFAULT_CONFIG.copy()
         return dict()
-
-    def get_url_config(self, key):
-        return self.get_config('URLS')[key]
-
-    def get_action_config(self, key):
-        return self.get_config('ACTIONS')[key]
-
-    def get_form_config(self, key):
-        return self.get_config('FORMS')[key]
-
-    def get_form_field_config(self, key):
-        return self.get_config('FORM_FIELDS')[key]
-
-    def get_msg_config(self, key):
-        return self.get_config('MSGS')[key]
-
-    def get_template_config(self, key):
-        return self.get_config('TEMPLATES')[key]
-
-    def get_redirect_config(self, key):
-        return self.get_config('REDIRECT')[key]
-
-    def get_user_field(self, key):
-        return self.get_config('USER_FIELDS')[key]
 
     def get_config(self, key):
         return self._config.get(key, self.get_defaults()[key])

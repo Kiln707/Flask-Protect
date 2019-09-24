@@ -1,10 +1,13 @@
 from flask import render_template, redirect, current_app
 from werkzeug import LocalProxy
+from wtforms import BooleanField, Field, HiddenField, PasswordField, \
+StringField, SubmitField, ValidationError, validators
+import os, inspect
+
 from .mixins import SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin
-from .forms import LoginForm, RegisterIdentifierForm, RegisterEmailForm, ForgotPasswordForm, ResetPasswordForm, ChangePasswordForm, ConfirmEmailForm
+from ..forms import BaseForm
 from ..utils import _protect, url_for_protect, get_redirect_url
 from ..Session import FLogin_Manager
-import os
 
 #
 #   UserPass Specific methods
@@ -62,6 +65,64 @@ def change_password(form):
         new_password = _protect.validator.get_field(form=form, key='PASSWORD').data
         return _protect.validator.change_user_password(identifier=user, current_password=current_password, new_password=new_password)
     return False
+
+#
+#
+#
+class LoginForm(BaseForm):
+    identifier=StringField('identifier', validators=[])
+    password=PasswordField('password',validators=[])
+    remember=BooleanField('remember_me')
+    submit=SubmitField('Login')
+
+class RegisterIdentifierForm(BaseForm):
+    username=StringField('username', validators=[])
+    email_address=StringField('email', validators=[])
+    confirm_email=StringField('confirm_email', validators=[])
+    password=PasswordField('password',validators=[])
+    confirm_password=PasswordField('confirm_password',validators=[])
+    submit=SubmitField('Register')
+
+    def to_dict(self, form):
+        fields={}
+        for member in form:
+            if isinstance(member, Field):
+                fields[member.name] = member
+        return dict((key, value.data) for key, value in fields.items())
+
+class RegisterEmailForm(BaseForm):
+    email_address=StringField('email', validators=[])
+    confirm_email=StringField('confirm_email', validators=[])
+    password=PasswordField('password',validators=[])
+    confirm_password=PasswordField('confirm_password',validators=[])
+    submit=SubmitField('Register')
+
+    def to_dict(self, form):
+        fields={}
+        for member in form:
+            if isinstance(member, Field):
+                fields[member.name] = member
+        return dict((key, value.data) for key, value in fields)
+
+class ForgotPasswordForm(BaseForm):
+    email_address=StringField('email', validators=[])
+    submit=SubmitField('Send Instructions')
+
+class ResetPasswordForm(BaseForm):
+    user_id=HiddenField("user")
+    password=PasswordField('password',validators=[])
+    confirm_password=PasswordField('confirm_password',validators=[])
+    submit=SubmitField('Reset Password')
+
+class ChangePasswordForm(BaseForm):
+    current_password=PasswordField('current password',validators=[])
+    password=PasswordField('password',validators=[])
+    confirm_password=PasswordField('confirm_password',validators=[])
+    submit=SubmitField('Change Password')
+
+class ConfirmEmailForm(BaseForm):
+    code=StringField('confirmation code', validators=[])
+    submit=SubmitField('Submit')
 
 #
 #
@@ -482,3 +543,27 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
 
     def get_defaults(self):
         return self.__DEFAULT_CONFIG
+
+    def get_url_config(self, key):
+        return self.get_config('URLS')[key]
+
+    def get_action_config(self, key):
+        return self.get_config('ACTIONS')[key]
+
+    def get_form_config(self, key):
+        return self.get_config('FORMS')[key]
+
+    def get_form_field_config(self, key):
+        return self.get_config('FORM_FIELDS')[key]
+
+    def get_msg_config(self, key):
+        return self.get_config('MSGS')[key]
+
+    def get_template_config(self, key):
+        return self.get_config('TEMPLATES')[key]
+
+    def get_redirect_config(self, key):
+        return self.get_config('REDIRECT')[key]
+
+    def get_user_field(self, key):
+        return self.get_config('USER_FIELDS')[key]

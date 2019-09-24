@@ -1,11 +1,12 @@
 from builtins import object
-from ..utils import _protect
+from flask_wtf import FlaskForm
 from wtforms import ValidationError, validators
 
-#
-# Copied from Flask Security
-#
+from .utils import _protect
 
+#
+#   Form Validators
+#
 class FormValidatorMixin(object):
     def __call__(self, form, field):
         if self.message and self.message.isupper():
@@ -36,3 +37,19 @@ def valid_user_email(form, field):
     form.user = _protect.validator._datastore.get_user(field.data)
     if form.user is None:
         raise ValidationError(get_message('USER_DOES_NOT_EXIST')[0])
+
+#
+#   Base Form
+#
+class BaseForm(FlaskForm):
+    def __init__(self, method='POST', action='', encoding='multipart/form-data', *args, **kwargs):
+        self.method = method
+        self.action = action
+        self.encoding = encoding
+        if current_app.testing:
+            self.TIME_LIMIT = None
+        super().__init__(*args, **kwargs)
+
+    def todict(self):
+        fields = inspect.getmembers(form)
+        return dict((key, value.data) for key, value in fields)

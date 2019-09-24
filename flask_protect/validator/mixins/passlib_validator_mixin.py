@@ -1,4 +1,9 @@
-from passlib.context import CryptContext
+try:
+    from passlib.context import CryptContext
+except ImportError:
+    print("PassLib is not installed.")
+    print("Please run 'python -m pip install passlib'")
+    exit(1)
 
 from .validator_base import ValidatorMixin
 
@@ -39,7 +44,6 @@ class CryptContextValidatorMixin(ValidatorMixin):
 
     def get_defaults(self):
         defaults = {}
-        print(type(self))
         if type(self) is not CryptContextValidatorMixin:
             defaults = super().get_defaults().copy()
         if hasattr(self, '__DEFAULT_CONFIG'):

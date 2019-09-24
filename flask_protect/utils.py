@@ -1,11 +1,10 @@
 from flask import current_app, request, session, after_this_request, url_for
-from werkzeug.local import LocalProxy
-
-import datetime, socket, unicodedata
-from ipaddress import ip_address
 from itsdangerous import URLSafeTimedSerializer
+from ipaddress import ip_address
 from netifaces import interfaces, ifaddresses, AF_INET, AF_INET6
 from sys import platform
+from werkzeug.local import LocalProxy
+import datetime, socket, unicodedata
 
 from ._compat import urlsplit, urlparse
 
@@ -13,6 +12,9 @@ _protect = LocalProxy(lambda: current_app.extensions['protect'])
 
 url_for_protect = LocalProxy(lambda: _protect.url_for)
 
+#
+#   Misc Utilities
+#
 def get_url(endpoint_or_url):
     try:
         return url_for(endpoint_or_url)

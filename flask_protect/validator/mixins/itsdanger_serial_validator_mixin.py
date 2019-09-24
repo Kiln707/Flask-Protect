@@ -1,7 +1,11 @@
-from itsdangerous import URLSafeTimedSerializer
+try:
+    from itsdangerous import URLSafeTimedSerializer
+except ImportError:
+    print("ItsDangerous is not installed.")
+    print("Please run 'python -m pip install itsdangerous'")
+    exit(1)
 
 from .validator_base import ValidatorMixin
-from ..utils import get_within_delta
 
 class SerializingValidatorMixin(ValidatorMixin):
     def __init__(self, datastore, login_manager=None, serializers={}, **kwargs):
@@ -33,7 +37,7 @@ class SerializingValidatorMixin(ValidatorMixin):
     def load_token(self, token, serializer_name, max_age=None):
         serializer = self.get_serializer(serializer_name)
         if max_age:
-            max_age = get_within_delta(max_age)
+            max_age = self.get_within_delta(max_age)
         data = None
         expired, invalid = False, False
         try:
@@ -48,7 +52,6 @@ class SerializingValidatorMixin(ValidatorMixin):
 
     def get_defaults(self):
         defaults = {}
-        print(type(self))
         if type(self) is not SerializingValidatorMixin:
             defaults = super().get_defaults().copy()
         if hasattr(self, '__DEFAULT_CONFIG'):
@@ -61,3 +64,12 @@ class SerializingValidatorMixin(ValidatorMixin):
         super().initialize(app, blueprint, **kwargs)
         for name, salt in self.get_config('SALT').items():
             self.create_serializer(app, name, salt)
+
+    def get_within_delta(time):
+        if isinstance(time, datetime.timedelta):
+            return time.seconds + time.days * 24 * 3600
+        elif str(time):
+            values = time.split()
+            td = timedelta(**{values[1]: int(values[0])})
+            return td.seconds + td.days * 24 * 3600
+        raise TypeError()

@@ -1,4 +1,6 @@
-class FMail_Mixin():
+from .validator_base import ValidatorMixin
+
+class FMail_Mixin(ValidatorMixin):
     def send_mail(self, action, user, **context):
         mail=current_app.extensions.get('mail')
         if mail:

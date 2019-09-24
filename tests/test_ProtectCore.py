@@ -216,7 +216,7 @@ class UserDatastoreMixin():
         user.password = newPassword
 
 
-from flask_protect.Authentication import ValidatorMixin
+from flask_protect.validator import ValidatorMixin
 from flask import session
 class TestValidator(ValidatorMixin):
 
