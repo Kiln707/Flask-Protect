@@ -13,7 +13,10 @@ if CleanCommand is not None:
 tests_require = [
     'pytest',
     'pytest-cov',
-    'pytest-pep8'
+    'pytest-pep8',
+    'passlib',
+    'itsdangerous',
+    'flask_login'
 ]
 
 install_requires = [
@@ -27,9 +30,6 @@ setup_requires = [
     'pytest-runner'
 ]
 
-
-packages = find_packages()
-
 setup(
     name='Flask-Protect',
     version='0.1.0',
@@ -40,7 +40,7 @@ setup(
     author='Steven Swanson',
     author_email='kiln707development@gmail.com',
     url='https://github.com/Kiln707/Flask-Protect',
-    packages=packages,
+    packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
     platforms='any',
