@@ -1,11 +1,10 @@
 from flask import render_template, redirect, current_app
-from werkzeug import LocalProxy
+from werkzeug.local import LocalProxy
 from wtforms import BooleanField, Field, HiddenField, PasswordField, \
 StringField, SubmitField, ValidationError, validators
 import os, inspect
 
-from .mixins import SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin
-from ..forms import BaseForm
+from .mixins import SerializingValidatorMixin, CryptContextValidatorMixin, FMail_Mixin, BaseForm
 from ..utils import _protect, url_for_protect, get_redirect_url
 from ..Session import FLogin_Manager
 

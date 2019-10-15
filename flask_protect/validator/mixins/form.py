@@ -2,7 +2,7 @@ from builtins import object
 from flask_wtf import FlaskForm
 from wtforms import ValidationError, validators
 
-from .utils import _protect
+from ...utils import _protect
 
 #
 #   Form Validators
