@@ -16,7 +16,8 @@ tests_require = [
     'pytest-pep8',
     'passlib',
     'itsdangerous',
-    'flask_login'
+    'flask_login',
+    'flask_mail',
 ]
 
 install_requires = [
