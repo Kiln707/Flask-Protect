@@ -502,7 +502,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
             redirect_url = get_redirect_url(self.get_redirect_config('LOGIN'))
             return redirect(redirect_url)
         #If valid code for forgotten password:
-        expired, invalid, data = self.load_token(token=reset_code, serializer_name='RESET_SALT')
+        expired, invalid, data = self.load_token(serializer_name='RESET_SALT', token=reset_code)
         user, invalid = self.get_user_from_token_data(data, invalid)
         if not user or invalid:
             invalid = True
@@ -519,7 +519,7 @@ class UserPassValidator(SerializingValidatorMixin, CryptContextValidatorMixin, F
             redirect_url = get_redirect_url(self.get_redirect_config('LOGIN'))
             return redirect(redirect_url)
         #If valid code for Confirmation
-        expired, invalid, data = self.load_token(token=confirm_code, serializer_name='CONFIRM_EMAIL')
+        expired, invalid, data = self.load_token(serializer_name='CONFIRM_EMAIL', token=confirm_code)
         user, invalid = self.get_user_from_token_data(data, invalid)
         #else Error!
 
