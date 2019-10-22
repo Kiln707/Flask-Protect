@@ -61,7 +61,7 @@ class Protect(object):
         return url_for(endpoint, **kwargs)
 
     def _ctx(self):
-        return dict(url_for_protect=self.url_for_protect, protect=LocalProxy(lambda: current_app.extensions['protect']))
+        return dict(url_for_protect=self.url_for, protect=LocalProxy(lambda: current_app.extensions['protect']))
 
     def _set_core_defaults(self):
         self._set_defaults(self.__DEFAULT_CORE_CONFIG)
