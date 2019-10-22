@@ -97,6 +97,30 @@ class ItsDangerous_Serialization_Validator_Mixin_TestCase(unittest.TestCase):
         self.assertFalse(invalid)
         self.assertEqual(data, 'test data')
 
+    def test_expired_token(self):
+        from datetime import timedelta
+        import time
+        td = timedelta(seconds=3)
+        token = self.validator.generate_token("TEST_SALT", 'test data')
+        time.sleep(td.total_seconds())
+        expired, invalid, data = self.validator.load_token('TEST_SALT', token, max_age=td)
+        self.assertFalse(expired)
+        self.assertFalse(invalid)
+        self.assertEqual(data, 'test data')
+        time.sleep(td.total_seconds())
+        expired, invalid, data = self.validator.load_token('TEST_SALT', token, max_age='3 seconds')
+        self.assertTrue(expired)
+        self.assertFalse(invalid)
+        self.assertEqual(data, 'test data')
+
+    def test_invalid_token(self):
+        token = self.validator.generate_token("TEST_SALT", 'test data')
+        token = token[::-1]
+        expired, invalid, data = self.validator.load_token('TEST_SALT', token)
+        self.assertFalse(expired)
+        self.assertTrue(invalid)
+        self.assertNotEqual(data, 'test data')
+
 
 # TODO: Test CryptContext
 # TODO: Test Forms

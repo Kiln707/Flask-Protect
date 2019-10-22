@@ -1,12 +1,11 @@
+import datetime
+
 from .validator_base import ValidatorMixin
 
 class SerializingValidatorMixin(ValidatorMixin):
     def __init__(self, datastore, login_manager=None, serializers={}, **kwargs):
         super().__init__(datastore=datastore, login_manager=login_manager, **kwargs)
         self._serializers=serializers
-
-    def get_salt_config(self, key):
-        return self.get_config('SALT')[key]
 
     def add_serializer(self, name, serializer):
         self._serializers[name]=serializer
@@ -60,11 +59,11 @@ class SerializingValidatorMixin(ValidatorMixin):
         for name, salt in self.get_config('SALT').items():
             self.create_serializer(app, name, salt)
 
-    def get_within_delta(time):
+    def get_within_delta(self, time):
         if isinstance(time, datetime.timedelta):
             return time.seconds + time.days * 24 * 3600
         elif str(time):
             values = time.split()
-            td = timedelta(**{values[1]: int(values[0])})
+            td = datetime.timedelta(**{values[1]: int(values[0])})
             return td.seconds + td.days * 24 * 3600
         raise TypeError()
