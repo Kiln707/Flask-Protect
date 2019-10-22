@@ -1,10 +1,3 @@
-try:
-    from passlib.context import CryptContext
-except ImportError:
-    print("PassLib is not installed.")
-    print("Please run 'python -m pip install passlib'")
-    exit(1)
-
 from .validator_base import ValidatorMixin
 
 class CryptContextValidatorMixin(ValidatorMixin):
@@ -32,6 +25,12 @@ class CryptContextValidatorMixin(ValidatorMixin):
         self._cryptcontext.update(**kwargs)
 
     def _set_crypt_context(self, crypt_context):
+        try:
+            from passlib.context import CryptContext
+        except ImportError:
+            print("PassLib is not installed.")
+            print("Please run 'python -m pip install passlib'")
+            exit(1)
         #Take given crypt_context. determine if it should be imported
         #Or assigned. Else, Generate proper CryptContext with config
         if crypt_context and type(crypt_context) is str:
@@ -42,17 +41,13 @@ class CryptContextValidatorMixin(ValidatorMixin):
         elif isinstance(crypt_context, CryptContext):
             self._cryptcontext=crypt_context
 
-    def get_defaults(self):
-        defaults = {}
-        if type(self) is not CryptContextValidatorMixin:
-            defaults = super().get_defaults().copy()
-        if hasattr(self, '__DEFAULT_CONFIG'):
-            return dict(ChainMap(self.__DEFAULT_CONFIG, defaults))
-        if defaults:
-            return defaults
-        return dict()
-
     def initialize(self, app, blueprint, **kwargs):
         super().initialize(app, blueprint, **kwargs)
+        try:
+            from passlib.context import CryptContext
+        except ImportError:
+            print("PassLib is not installed.")
+            print("Please run 'python -m pip install passlib'")
+            exit(1)
         if not self._cryptcontext:
             self._cryptcontext = CryptContext(**self.get_config('CRYPT_SETTINGS'))

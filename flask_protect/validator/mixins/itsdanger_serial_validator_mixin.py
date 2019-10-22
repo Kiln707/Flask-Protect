@@ -1,10 +1,3 @@
-try:
-    from itsdangerous import URLSafeTimedSerializer
-except ImportError:
-    print("ItsDangerous is not installed.")
-    print("Please run 'python -m pip install itsdangerous'")
-    exit(1)
-
 from .validator_base import ValidatorMixin
 
 class SerializingValidatorMixin(ValidatorMixin):
@@ -19,6 +12,12 @@ class SerializingValidatorMixin(ValidatorMixin):
         self._serializers[name]=serializer
 
     def create_serializer(self, app, name, salt):
+        try:
+            from itsdangerous import URLSafeTimedSerializer
+        except ImportError:
+            print("ItsDangerous is not installed.")
+            print("Please run 'python -m pip install itsdangerous'")
+            exit(1)
         secret_key = app.config.get('SECRET_KEY')
         self.add_serializer(name, URLSafeTimedSerializer(secret_key=secret_key, salt=salt))
 
@@ -34,7 +33,13 @@ class SerializingValidatorMixin(ValidatorMixin):
     def generate_token(self, serializer_name, data):
         return self.get_serializer(serializer_name).dumps(data)
 
-    def load_token(self, token, serializer_name, max_age=None):
+    def load_token(self, serializer_name, token, max_age=None):
+        try:
+            from itsdangerous import SignatureExpired, BadSignature
+        except ImportError:
+            print("ItsDangerous is not installed.")
+            print("Please run 'python -m pip install itsdangerous'")
+            exit(1)
         serializer = self.get_serializer(serializer_name)
         if max_age:
             max_age = self.get_within_delta(max_age)
@@ -49,16 +54,6 @@ class SerializingValidatorMixin(ValidatorMixin):
             invalid = True
         expired = expired and (data is not None)
         return expired, invalid, data
-
-    def get_defaults(self):
-        defaults = {}
-        if type(self) is not SerializingValidatorMixin:
-            defaults = super().get_defaults().copy()
-        if hasattr(self, '__DEFAULT_CONFIG'):
-            return dict(ChainMap(self.__DEFAULT_CONFIG, defaults))
-        if defaults:
-            return defaults
-        return dict()
 
     def initialize(self, app, blueprint, **kwargs):
         super().initialize(app, blueprint, **kwargs)
