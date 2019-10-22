@@ -85,9 +85,12 @@ class ValidatorMixin():
         return form, False
 
     def get_defaults(self):
-        if hasattr(self, '__DEFAULT_CONFIG'):
-            return self.__DEFAULT_CONFIG.copy()
-        return dict()
+        defaults = {}
+        for clazz in self.__class__.__mro__[::-1]:
+            if hasattr(clazz, '_%s__DEFAULT_CONFIG'%clazz.__name__):
+                defaults.update(getattr(clazz, '_%s__DEFAULT_CONFIG'%clazz.__name__))
+        print(defaults)
+        return defaults
 
     def get_config(self, key):
         return self._config.get(key, self.get_defaults()[key])
