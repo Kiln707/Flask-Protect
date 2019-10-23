@@ -11,15 +11,6 @@ class ValidatorMixin():
     #   Requires override
     ############################################################################################
     #
-    # User Functions
-    #
-    def validate_user(self, user, password):
-        raise NotImplementedError()
-
-    def change_user_password(self, identifier, current_password, new_password):
-        raise NotImplementedError()
-
-    #
     # validator actions
     #
     def routes(self, blueprint):
@@ -89,7 +80,6 @@ class ValidatorMixin():
         for clazz in self.__class__.__mro__[::-1]:
             if hasattr(clazz, '_%s__DEFAULT_CONFIG'%clazz.__name__):
                 defaults.update(getattr(clazz, '_%s__DEFAULT_CONFIG'%clazz.__name__))
-        print(defaults)
         return defaults
 
     def get_config(self, key):

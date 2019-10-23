@@ -6,8 +6,8 @@ class CryptContextValidatorMixin(ValidatorMixin):
         self._cryptcontext=None
         self._set_crypt_context(crypt_context)
 
-    def hash(self, password, scheme=None, category=None, **kwargs):
-        return self._cryptcontext.hash(password, scheme=scheme, category=category, **kwargs)
+    def hash(self, data, scheme=None, category=None, **kwargs):
+        return self._cryptcontext.hash(data, scheme=scheme, category=category, **kwargs)
 
     def hash_password(self, password, scheme=None, category=None, **kwargs):
         return self.hash(password, scheme=None, category=None, **kwargs)
@@ -27,6 +27,7 @@ class CryptContextValidatorMixin(ValidatorMixin):
     def _set_crypt_context(self, crypt_context):
         try:
             from passlib.context import CryptContext
+            import os
         except ImportError:
             print("PassLib is not installed.")
             print("Please run 'python -m pip install passlib'")
