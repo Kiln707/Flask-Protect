@@ -1,0 +1,13 @@
+{% if layout %}
+  {% extends layout %}
+{% else %}
+  {% extends 'protect/base.html' %}
+{% endif %}
+{% from "protect/render_field.macro" import render_field %}
+{% block form %}
+  <form method="{{ form.method }}" action="{{ form.action }}" name="{{ form.name }}" enctype="{{ form.enconding }}">
+    {% for field in form %}
+      {{ render_field(field) }}
+    {% endfor %}
+  </form>
+{% endblock %}

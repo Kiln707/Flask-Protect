@@ -1,0 +1,16 @@
+<h1>Flask Protect</h1>
+<nav>
+  {% for route in endpoints() %}
+    <a href="{{ url_for(route) }}">{{route}}</a>
+  {% endfor %}
+</nav>
+</br>
+</br>
+{% if current_user.is_authenticated %}
+  Logged in as: {{ current_user.username }}
+{% else %}
+  Not Logged in.
+{% endif %}
+</br>
+{% block form %}
+{% endblock %}

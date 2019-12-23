@@ -1,0 +1,4 @@
+Flask
+flask_wtf
+netifaces
+wtforms
