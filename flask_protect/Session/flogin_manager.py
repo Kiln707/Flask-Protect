@@ -1,12 +1,10 @@
 from flask import (_request_ctx_stack, current_app, request, session, url_for, has_request_context)
 from flask.signals import Namespace
-from flask_login import LoginManager, login_required, current_user
-from flask_login import login_user as _login_user
-from flask_login import logout_user as _logout_user
-from flask_login.signals import (user_loaded_from_cookie, user_loaded_from_header, user_loaded_from_request, user_unauthorized, user_needs_refresh, user_accessed, session_protected)
 
 class FLogin_Manager():
     def __init__(self, user_loader=None, request_loader=None, login_view=None, app=None, user=None, anonymous_user=None):
+        from flask_login import LoginManager, login_required, current_user
+        from flask_login.signals import (user_loaded_from_cookie, user_loaded_from_header, user_loaded_from_request, user_unauthorized, user_needs_refresh, user_accessed, session_protected)
         super().__init__()
         self.User = user
         self.anonymous_user=anonymous_user
@@ -47,9 +45,11 @@ class FLogin_Manager():
         return current_user
 
     def login_user(self, user, remember=False, duration=None, force=False, fresh=True):
+        from flask_login import login_user as _login_user
         return _login_user(user)
 
     def logout_user(self):
+        from flask_login import logout_user as _logout_user
         return _logout_user()
 
     def confirm_login(self):

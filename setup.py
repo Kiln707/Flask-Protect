@@ -10,6 +10,10 @@ cmd_classes = {}
 if CleanCommand is not None:
     cmd_classes['clean'] = CleanCommand
 
+major_version = 0
+minor_version = 1
+patch_version = 1
+
 tests_require = [
     'pytest',
     'pytest-cov',
@@ -33,7 +37,7 @@ setup_requires = [
 
 setup(
     name='Flask-Protect',
-    version='0.1.0',
+    version="%s.%s.%s"%(major_version, minor_version, patch_version),
     description=__doc__,
     long_description='tmp',
     keywords='flask protect',
